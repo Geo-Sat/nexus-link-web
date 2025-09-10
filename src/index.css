@@ -1,0 +1,190 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import '@fortawesome/fontawesome-free/css/all.css';
+
+/* Geosat Vehicle Tracking Design System - Professional Fleet Management Interface */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Professional tracking system color palette */
+    --background: 210 30% 8%;
+    --foreground: 213 27% 84%;
+
+    --card: 210 25% 12%;
+    --card-foreground: 213 27% 84%;
+
+    --popover: 210 25% 12%;
+    --popover-foreground: 213 27% 84%;
+
+    --primary: 196 91% 48%;
+    --primary-foreground: 210 30% 8%;
+
+    --secondary: 210 20% 20%;
+    --secondary-foreground: 213 27% 84%;
+
+    --muted: 210 20% 16%;
+    --muted-foreground: 213 15% 60%;
+
+    --accent: 142 71% 45%;
+    --accent-foreground: 210 30% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 210 20% 20%;
+    --input: 210 20% 16%;
+    --ring: 196 91% 48%;
+
+    --radius: 0.75rem;
+
+    /* Fleet tracking specific tokens */
+    --tracking-primary: 196 91% 48%;
+    --tracking-secondary: 142 71% 45%;
+    --tracking-warning: 38 92% 50%;
+    --tracking-danger: 0 84% 60%;
+    --tracking-success: 142 71% 45%;
+    
+    /* Glassmorphism overlays */
+    --overlay-bg: 210 25% 12%;
+    --overlay-border: 210 20% 25%;
+    --glass-bg: rgba(15, 23, 42, 0.8);
+    --glass-border: rgba(59, 130, 246, 0.2);
+    
+    /* Map and vehicle colors */
+    --vehicle-active: 196 91% 48%;
+    --vehicle-inactive: 213 15% 60%;
+    --vehicle-selected: 142 71% 45%;
+    --route-color: 196 91% 48%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(196 91% 48%), hsl(142 71% 45%));
+    --gradient-overlay: linear-gradient(to bottom, transparent, hsl(210 25% 12% / 0.9));
+    --gradient-glass: linear-gradient(135deg, hsl(210 25% 12% / 0.8), hsl(210 20% 16% / 0.6));
+    
+    /* Shadows and effects */
+    --shadow-glass: 0 8px 32px hsl(210 30% 8% / 0.3);
+    --shadow-elevated: 0 20px 40px hsl(210 30% 8% / 0.4);
+    --shadow-vehicle: 0 4px 20px hsl(196 91% 48% / 0.3);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Light mode - minimal changes as we focus on dark professional theme */
+  .light {
+    --background: 213 27% 95%;
+    --foreground: 210 30% 8%;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(59, 130, 246, 0.2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  
+  /* Google Maps container styles */
+  .gm-style {
+    font-family: inherit;
+  }
+  
+  .gm-style-iw {
+    color: #1f2937 !important;
+  }
+  
+  .gm-style-iw-d {
+    overflow: visible !important;
+  }
+}
+
+@layer components {
+  /* Glass morphism utility classes */
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+  }
+  
+  .glass-overlay {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(16px);
+    border: 3px solid hsl(var(--border));
+    box-shadow: var(--shadow-glass);
+  }
+  
+  /* Vehicle tracking specific components */
+  .vehicle-marker {
+    filter: drop-shadow(var(--shadow-vehicle));
+    transition: var(--transition-smooth);
+  }
+  
+  .vehicle-marker:hover {
+    transform: scale(1.1);
+  }
+  
+  .tracking-gradient {
+    background: var(--gradient-primary);
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
