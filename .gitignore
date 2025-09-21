@@ -28,6 +28,7 @@ dist-ssr
 
 .prompt
 .prompt/*
+prompt
 prompt/*
 
 *.code-workspace
