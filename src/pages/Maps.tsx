@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GoogleTrackingMap } from '@/components/GoogleTrackingMap';
 import { VehicleSearchOverlay } from '@/components/VehicleSearchOverlay';
 import { SelectedVehiclesTable } from '@/components/SelectedVehiclesTable';
@@ -23,8 +23,186 @@ export function MapsPage() {
   const { toast } = useToast();
   const [isVehicleSearchOpen, setIsVehicleSearchOpen] = useState(true);
   const [isSelectedVehiclesOpen, setIsSelectedVehiclesOpen] = useState(true);
-
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'error'>('disconnected');
+  
+  const ws = useRef<WebSocket | null>(null);
+  const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
+
+  // Get WebSocket URL based on environment
+  const getWebSocketUrl = () => {
+    // For development - use localhost or your server URL
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'ws://localhost:8000/ws/867329032849257';
+    }
+    // For production - use wss:// with the same host
+    return `wss://${window.location.host}/vehicles`;
+  };
+
+  // WebSocket connection management
+  useEffect(() => {
+    connectWebSocket();
+
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+      }
+    };
+  }, []);
+
+  const connectWebSocket = () => {
+    try {
+      const socketUrl = getWebSocketUrl();
+      console.log('Connecting to WebSocket:', socketUrl);
+      
+      ws.current = new WebSocket(socketUrl);
+      
+      ws.current.onopen = () => {
+        setConnectionStatus('connected');
+        console.log('WebSocket connected');
+        toast({
+          title: "Connected",
+          description: "Real-time tracking enabled",
+          variant: "default",
+        });
+      };
+
+      ws.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log(data);
+          handleWebSocketMessage(data);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      ws.current.onclose = () => {
+        setConnectionStatus('disconnected');
+        console.log('WebSocket disconnected');
+        
+        // Attempt to reconnect after 5 seconds
+        reconnectTimeout.current = setTimeout(() => {
+          console.log('Attempting to reconnect...');
+          connectWebSocket();
+        }, 5000);
+      };
+
+      ws.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setConnectionStatus('error');
+        toast({
+          title: "Connection Error",
+          description: "Failed to connect to real-time server",
+          variant: "destructive",
+        });
+      };
+
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
+      // Fallback to mock data if WebSocket fails
+      startMockUpdates();
+    }
+  };
+
+  // Fallback to mock updates if WebSocket fails
+  const startMockUpdates = () => {
+    const interval = setInterval(() => {
+      simulateVehicleMovement();
+      const updatedVehicles = [...vehicles];
+      setVehicles(updatedVehicles);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  };
+
+  const handleWebSocketMessage = (data: any) => {
+    // Handle different types of WebSocket messages
+    switch (data.type) {
+      case 'gps_update':
+        handleVehicleUpdate(data.data);
+        break;
+      case 'vehicle_status':
+        handleVehicleStatusUpdate(data.data);
+        break;
+      case 'bulk_update':
+        handleBulkVehicleUpdate(data.data);
+        break;
+      default:
+        console.log('Unknown message type:', data.type);
+    }
+  };
+
+  const handleVehicleUpdate = (updatedVehicle: Vehicle) => {
+    setVehicles(prev => prev.map(vehicle => 
+      vehicle.imei == updatedVehicle.imei
+        ? { ...vehicle, ...updatedVehicle }
+        : vehicle
+    ));
+
+    // Show notification for significant movements
+    // const oldVehicle = vehicles.find(v => v.imei == updatedVehicle.imei);
+    // console.log(vehicles);
+
+
+    // if (oldVehicle && 
+    //     (oldVehicle.coordinates[0] !== updatedVehicle.coordinates[0] ||
+    //      oldVehicle.coordinates[1] !== updatedVehicle.coordinates[1])) {
+    //   toast({
+    //     title: "Vehicle Moved",
+    //     description: `${oldVehicle.registrationNumber} has updated its position`,
+    //   });
+    // }
+  };
+
+  const handleVehicleStatusUpdate = (statusUpdate: { vehicleId: number; status: string }) => {
+    // setVehicles(prev => prev.map(vehicle => 
+    //   vehicle.id === statusUpdate.vehicleId 
+    //     ? { ...vehicle, status: statusUpdate.status }
+    //     : vehicle
+    // ));
+
+    const vehicle = vehicles.find(v => v.id === statusUpdate.vehicleId);
+    if (vehicle) {
+      toast({
+        title: "Status Update",
+        description: `${vehicle.registrationNumber} is now ${statusUpdate.status}`,
+      });
+    }
+  };
+
+  const handleBulkVehicleUpdate = (vehiclesData: Vehicle[]) => {
+    setVehicles(prev => {
+      const updatedVehicles = [...prev];
+      vehiclesData.forEach(updatedVehicle => {
+        const index = updatedVehicles.findIndex(v => v.id === updatedVehicle.id);
+        if (index !== -1) {
+          updatedVehicles[index] = { ...updatedVehicles[index], ...updatedVehicle };
+        }
+      });
+      return updatedVehicles;
+    });
+  };
+
+  // Send message to WebSocket (e.g., to subscribe to specific vehicles)
+  const sendWebSocketMessage = (message: any) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify(message));
+    }
+  };
+
+  // Subscribe to selected vehicles for real-time updates
+  useEffect(() => {
+    if (selectedVehicles.length > 0 && connectionStatus === 'connected') {
+      sendWebSocketMessage({
+        type: 'subscribe',
+        vehicleIds: selectedVehicles
+      });
+    }
+  }, [selectedVehicles, connectionStatus]);
 
   // Load initial vehicle and driver data
   useEffect(() => {
@@ -56,32 +234,6 @@ export function MapsPage() {
     loadData();
   }, [toast]);
 
-  // Simulate real-time vehicle movement
-  useEffect(() => {
-    const interval = setInterval(() => {
-      simulateVehicleMovement();
-      const updatedVehicles = [...vehicles];
-      setVehicles(updatedVehicles);
-
-      // Show notification for vehicle updates
-      const movedVehicles = updatedVehicles.filter(v => {
-        const oldVehicle = vehicles.find(oldV => oldV.id === v.id);
-        return oldVehicle &&
-          (oldVehicle.coordinates[0] !== v.coordinates[0] ||
-            oldVehicle.coordinates[1] !== v.coordinates[1]);
-      });
-
-      if (movedVehicles.length > 0) {
-        toast({
-          title: "Vehicle Updates",
-          description: `${movedVehicles.length} vehicles have moved`,
-        });
-      }
-    }, 5000); // Update every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [vehicles, toast]);
-
   const handleVehicleSelect = (vehicleId: number, isSelected: boolean) => {
     setSelectedVehicles(prev =>
       isSelected
@@ -105,6 +257,14 @@ export function MapsPage() {
           title: "Vehicle Selected",
           description: `${vehicle.registrationNumber} added to tracking`,
         });
+
+        // Subscribe to this vehicle for real-time updates
+        if (connectionStatus === 'connected') {
+          sendWebSocketMessage({
+            type: 'subscribe',
+            vehicleIds: [vehicleId]
+          });
+        }
       }
     }
   };
@@ -115,17 +275,7 @@ export function MapsPage() {
 
   const handleShowHistory = (vehicleIds: number[]) => {
     if (vehicleIds.length === 0) return;
-    // navigate to trip history page with vehicleIds as query param in a blank tab
-    // lets btoa the vehicleIds array
-    // window.open(`/trips?vIds=${btoa(vehicleIds.join(','))}`, '_blank');
     navigate(`/trips?vIds=${btoa(vehicleIds.join(','))}`);
-    // setShowingHistory(!showingHistory);
-    // toast({
-    //   title: showingHistory ? "History Hidden" : "History Visible",
-    //   description: showingHistory 
-    //     ? "Route history has been hidden" 
-    //     : `Showing route history for ${vehicleIds.length} vehicle(s)`,
-    // });
   };
 
   const toggleDriverSelection = (driverId: number) => {
@@ -168,9 +318,7 @@ export function MapsPage() {
     ? vehicles.filter(vehicle => selectedDrivers.includes(vehicle.account.id))
     : vehicles;
 
-
   const selectedVehicleData = filteredVehicles.filter(v => selectedVehicles.includes(v.id));
-
   const mappedVehicles = (selectedVehicleData.length > 0) ? selectedVehicleData : filteredVehicles;
 
   const filteredDrivers = drivers.filter(driver =>
@@ -208,6 +356,27 @@ export function MapsPage() {
         selectedVehicles={selectedVehicles}
         showingHistory={showingHistory}
       />
+
+      {/* Connection status indicator */}
+      <div className="absolute top-4 right-4 z-40">
+        <div className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${
+          connectionStatus === 'connected' 
+            ? 'bg-green-500/20 text-green-600' 
+            : connectionStatus === 'error'
+            ? 'bg-red-500/20 text-red-600'
+            : 'bg-yellow-500/20 text-yellow-600'
+        }`}>
+          <div className={`w-2 h-2 rounded-full ${
+            connectionStatus === 'connected' 
+              ? 'bg-green-500 animate-pulse' 
+              : connectionStatus === 'error'
+              ? 'bg-red-500'
+              : 'bg-yellow-500'
+          }`}></div>
+          {connectionStatus === 'connected' ? 'Live' : 
+           connectionStatus === 'error' ? 'Connection Error' : 'Connecting...'}
+        </div>
+      </div>
 
       {/* Search Overlay */}
       <div className="search-overlay glass-overlay p-0.5">
@@ -271,7 +440,15 @@ export function MapsPage() {
       <div className="status-bar" style={{ bottom: '0.1rem' }}>
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <div className={`w-2 h-2 rounded-full ${
+              connectionStatus === 'connected' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+            }`}></div>
+            <span className="text-muted-foreground">
+              {connectionStatus === 'connected' ? 'Live' : 'Offline'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-muted-foreground">
               {filteredVehicles.filter(v => v.status === 'online').length} Online
             </span>

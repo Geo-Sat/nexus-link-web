@@ -1,5 +1,5 @@
 // Google Maps configuration
-export const GOOGLE_MAPS_API_KEY = 'AIzaSyCa4OG6_WmQE1riiaiMQfja-Dcr_G_LIE0';
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyAvivakNMpWsx5OSgRyNylfUk_ZPL-Dfhc';
 
 export const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry" | "drawing" | "visualization")[] = [
   "places",
