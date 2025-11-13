@@ -32,3 +32,4 @@ prompt
 prompt/*
 
 *.code-workspace
+package-lock.json
