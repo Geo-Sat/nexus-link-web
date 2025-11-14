@@ -10,6 +10,7 @@ import '@/styles/overlays.css';
 import { X, ChevronDown, Search, Check, ChevronUp, Car } from 'lucide-react';
 import { Account } from '@/types/account';
 import { useNavigate } from 'react-router-dom';
+import { LiveTrackingData } from '@/types/live-tracking';
 
 export function MapsPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -31,9 +32,13 @@ export function MapsPage() {
 
   // Get WebSocket URL based on environment
   const getWebSocketUrl = () => {
+    let wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    let imeiParam = '0358657105381656'; 
+    let hostParam = window.location.host;
+    hostParam = '65.109.170.207:8000';
     // For development - use localhost or your server URL
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'ws://localhost:8000/ws/867329032849257';
+      return `${wsProtocol}://${hostParam}/ws/${imeiParam}`;
     }
     // For production - use wss:// with the same host
     return `wss://${window.location.host}/vehicles`;
@@ -73,7 +78,6 @@ export function MapsPage() {
       ws.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log(data);
           handleWebSocketMessage(data);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
@@ -122,21 +126,28 @@ export function MapsPage() {
   const handleWebSocketMessage = (data: any) => {
     // Handle different types of WebSocket messages
     switch (data.type) {
-      case 'gps_update':
-        handleVehicleUpdate(data.data);
+      case 'gps_log':
+        handleVehicleUpdate(data);
         break;
-      case 'vehicle_status':
-        handleVehicleStatusUpdate(data.data);
+      case 'status_log':
+        handleVehicleStatusUpdate(data);
         break;
       case 'bulk_update':
-        handleBulkVehicleUpdate(data.data);
+        handleBulkVehicleUpdate(data);
         break;
       default:
         console.log('Unknown message type:', data.type);
     }
   };
 
-  const handleVehicleUpdate = (updatedVehicle: Vehicle) => {
+  const handleVehicleUpdate = (data: LiveTrackingData) => {
+    var updatedVehicle: Partial<Vehicle> = {
+      imei: data.imei,
+      coordinates: [data.longitude, data.latitude],
+      speed: data.speed,
+      heading: parseFloat(data.course),
+      lastUpdate: new Date(data.timestamp * 1000),
+    };    
     setVehicles(prev => prev.map(vehicle => 
       vehicle.imei == updatedVehicle.imei
         ? { ...vehicle, ...updatedVehicle }
@@ -153,7 +164,7 @@ export function MapsPage() {
     //      oldVehicle.coordinates[1] !== updatedVehicle.coordinates[1])) {
     //   toast({
     //     title: "Vehicle Moved",
-    //     description: `${oldVehicle.registrationNumber} has updated its position`,
+    //     description: `${oldVehicle.registrationNumber} has updated its position and is moving at ${updatedVehicle.speed} km/h heading ${updatedVehicle.heading}°`,
     //   });
     // }
   };
