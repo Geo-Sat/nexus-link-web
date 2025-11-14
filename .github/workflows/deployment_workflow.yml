@@ -20,7 +20,9 @@ on:
       GCP_SA_KEY:
         description: "GCP Service Account Key"
         required: true
-
+      PROJECT_ID:
+        description: "GCP Project ID"
+        required: true
 jobs:
   build:
     runs-on: ubuntu-latest
