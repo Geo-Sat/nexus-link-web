@@ -1,0 +1,17 @@
+name: Build and Deploy Staging Dashboard
+
+on:
+  push:
+    branches:
+    - staging
+
+jobs:
+  build:
+    uses: "./.github/workflows/deployment_workflow.yml"
+    secrets:
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      PROJECT_ID: ${{ secrets.PROJECT_ID }}
+    with:
+      environment: staging
+      image_name: gcr.io/nexus-link/nexus-link-web-staging
+      service_name: nexus-link-web-staging

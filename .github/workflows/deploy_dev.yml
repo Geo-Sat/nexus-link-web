@@ -1,0 +1,17 @@
+name: Build and Deploy Dev Dashboard
+
+on:
+  push:
+    branches:
+    - dev
+
+jobs:
+  build:
+    uses: "./.github/workflows/deployment_workflow.yml"
+    secrets:
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      PROJECT_ID: ${{ secrets.PROJECT_ID }}
+    with:
+      environment: dev
+      image_name: gcr.io/nexus-link/nexus-link-web-dev
+      service_name: nexus-link-web-dev
