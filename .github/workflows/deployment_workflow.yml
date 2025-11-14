@@ -7,7 +7,7 @@ on:
         description: "Environment"
         required: true
         type: string
-      docker_image:
+      image_name:
         description: "Docker Image"
         required: true
         type: string
@@ -23,8 +23,27 @@ on:
       PROJECT_ID:
         description: "GCP Project ID"
         required: true
+
+env:
+  GCR_HOSTNAME: gcr.io
+  DOCKER_BUILDKIT: 1
+  FULL_IMAGE_NAME: ${GCR_HOSTNAME}/${{ secrets.PROJECT_ID }}/${{ inputs.image_name }}:${{ github.sha }}
+  LATEST_IMAGE_NAME: ${GCR_HOSTNAME}/${{ secrets.PROJECT_ID }}/${{ inputs.image_name }}:latest
+
 jobs:
-  build:
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        run: |
+          npm install
+
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -70,11 +89,28 @@ jobs:
           npm i @esbuild/linux-x64
           npm run build
 
-      - name: Build Docker image
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Authenticate Docker, Build and Push Image
         run: |
-          docker build -t ${{ inputs.docker_image }} .
-          gcloud auth configure-docker
-          docker push ${{ inputs.docker_image }}
+          gcloud auth configure-docker gcr.io --quiet & wait
+          
+          FULL_IMAGE_NAME="${GCR_HOSTNAME}/${PROJECT_ID}/${IMAGE_NAME}:${{ github.sha }}"
+          echo "Building Docker Image with Tag: ${FULL_IMAGE_NAME}"
+
+          docker build -t ${{ env.FULL_IMAGE_NAME }} -f Dockerfile . & wait
+          docker push ${{ env.FULL_IMAGE_NAME }} & wait
+
+          docker tag ${{ env.FULL_IMAGE_NAME }} ${{ env.LATEST_IMAGE_NAME }} & wait
+          docker push ${{ env.LATEST_IMAGE_NAME }} & wait
+          
+          echo "Tagged and Pushed Docker Image with Tags: ${{ env.FULL_IMAGE_NAME }} and ${{ env.LATEST_IMAGE_NAME }}"
 
       - name: Deploy to Cloud Run
         id: deploy
