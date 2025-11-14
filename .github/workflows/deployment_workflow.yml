@@ -44,6 +44,8 @@ jobs:
           npm install
 
   deploy:
+    needs: test
+    name: Build and Deploy to GCP Cloud Run
     runs-on: ubuntu-latest
 
     steps:
@@ -113,12 +115,15 @@ jobs:
           echo "Tagged and Pushed Docker Image with Tags: ${{ env.FULL_IMAGE_NAME }} and ${{ env.LATEST_IMAGE_NAME }}"
 
       - name: Deploy to Cloud Run
-        id: deploy
         uses: google-github-actions/deploy-cloudrun@v1
         with:
-          service: ${{ inputs.service_name }}
-          project_id: ${{ secrets.PROJECT_ID }}
-          image: ${{ inputs.docker_image }}
-
+          image: gcr.io/${{ secrets.PROJECT_ID }}/${{ inputs.image_name }}:${{ github.sha }}
+          service: nexus-link-api-${{ inputs.environment }}
+          region: us-central1
+      
       - name: Use output
         run: echo "The URL is ${{ steps.deploy.outputs.url }}"
+
+      - name: Clean up
+        if: always()
+        run: pkill cloud_sql_proxy || true
