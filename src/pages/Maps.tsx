@@ -40,8 +40,9 @@ export function MapsPage() {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return `${wsProtocol}://${hostParam}/ws/${imeiParam}`;
     }
+    hostParam = 'ws.nexus-link.geo-sat.co.ke';
     // For production - use wss:// with the same host
-    return `ws://${hostParam}/ws/${imeiParam}`;
+    return `wss://${hostParam}/ws/${imeiParam}`;
   };
 
   // WebSocket connection management
