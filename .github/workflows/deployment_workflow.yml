@@ -72,7 +72,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ inputs.docker_image }} -f ./GH.Dockerfile .
+          docker build -t ${{ inputs.docker_image }} -f .
           gcloud auth configure-docker
           docker push ${{ inputs.docker_image }}
 
