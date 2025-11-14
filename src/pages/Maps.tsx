@@ -41,7 +41,7 @@ export function MapsPage() {
       return `${wsProtocol}://${hostParam}/ws/${imeiParam}`;
     }
     // For production - use wss:// with the same host
-    return `wss://${hostParam}/ws/${imeiParam}`;
+    return `ws://${hostParam}/ws/${imeiParam}`;
   };
 
   // WebSocket connection management
