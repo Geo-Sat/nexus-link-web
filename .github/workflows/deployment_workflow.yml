@@ -118,7 +118,7 @@ jobs:
         uses: google-github-actions/deploy-cloudrun@v1
         with:
           image: gcr.io/${{ secrets.PROJECT_ID }}/${{ inputs.image_name }}:${{ github.sha }}
-          service: nexus-link-api-${{ inputs.environment }}
+          service: nexus-link-web-${{ inputs.environment }}
           region: us-central1
       
       - name: Use output
