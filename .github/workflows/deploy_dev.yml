@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    uses: "./.github/workflows/deployment_workflow.yaml"
+    uses: "./.github/workflows/deployment_workflow.yml"
     secrets:
       GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
       PROJECT_ID: ${{ secrets.PROJECT_ID }}
