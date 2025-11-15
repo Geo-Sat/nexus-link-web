@@ -58,14 +58,12 @@ jobs:
         env:
           cache-name: cache-app-b2c-node-modules
         with:
-          # npm cache files are stored in `~/.npm` on Linux/macOS
           path: |
             ~/.npm
             **/node_modules
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
-
 
       - if: ${{ steps.cache-app-b2c-client-admin-npm.outputs.cache-hit != 'true' }}
         name: List node modules
@@ -83,12 +81,22 @@ jobs:
           project_id: ${{ secrets.PROJECT_ID }}
           export_default_credentials: true
 
-      - name: Install dependencies and build app
+      - name: Install dependencies and build app with environment variables
         run: |
           export NODE_OPTIONS="--max_old_space_size=6096"
           npm install
           npm i @nrwl/nx-linux-x64-gnu
           npm i @esbuild/linux-x64
+          
+          # Set Vite environment variables BEFORE building
+          export VITE_API_BASE_URL="https://nexus-link-api-${{ inputs.environment }}-788538598885.us-central1.run.app/api/v1/"
+          export VITE_WS_BASE_URL="wss://ws-${{ inputs.environment }}.nexus-link.geo-sat.co.ke"
+          export VITE_ENVIRONMENT="${{ inputs.environment }}"
+          export VITE_VERSION="${{ github.sha }}"
+          
+          echo "Building with API URL: $VITE_API_BASE_URL"
+          echo "Building with WebSocket URL: $VITE_WS_BASE_URL"
+          
           npm run build
 
       - name: Cache Docker layers
@@ -101,16 +109,15 @@ jobs:
 
       - name: Authenticate Docker, Build and Push Image
         run: |
-          gcloud auth configure-docker gcr.io --quiet & wait
+          gcloud auth configure-docker gcr.io --quiet
           
-          FULL_IMAGE_NAME="${GCR_HOSTNAME}/${PROJECT_ID}/${IMAGE_NAME}:${{ github.sha }}"
-          echo "Building Docker Image with Tag: ${FULL_IMAGE_NAME}"
+          echo "Building Docker Image with Tag: ${{ env.FULL_IMAGE_NAME }}"
 
-          docker build -t ${{ env.FULL_IMAGE_NAME }} -f Dockerfile . & wait
-          docker push ${{ env.FULL_IMAGE_NAME }} & wait
+          docker build -t ${{ env.FULL_IMAGE_NAME }} -f Dockerfile .
+          docker push ${{ env.FULL_IMAGE_NAME }}
 
-          docker tag ${{ env.FULL_IMAGE_NAME }} ${{ env.LATEST_IMAGE_NAME }} & wait
-          docker push ${{ env.LATEST_IMAGE_NAME }} & wait
+          docker tag ${{ env.FULL_IMAGE_NAME }} ${{ env.LATEST_IMAGE_NAME }}
+          docker push ${{ env.LATEST_IMAGE_NAME }}
           
           echo "Tagged and Pushed Docker Image with Tags: ${{ env.FULL_IMAGE_NAME }} and ${{ env.LATEST_IMAGE_NAME }}"
 
@@ -120,10 +127,8 @@ jobs:
           image: gcr.io/${{ secrets.PROJECT_ID }}/${{ inputs.image_name }}:${{ github.sha }}
           service: nexus-link-web-${{ inputs.environment }}
           region: us-central1
-          env_vars: |
-            VITE_API_BASE_URL=https://nexus-link-api-${{ inputs.environment }}-788538598885.us-central1.run.app/api/v1/
-            VITE_WS_BASE_URL=wss://ws-${{ inputs.environment }}.nexus-link.geo-sat.co.ke
-      
+          # Remove env_vars since they won't work with static files
+
       - name: Use output
         run: echo "The URL is ${{ steps.deploy.outputs.url }}"
 
