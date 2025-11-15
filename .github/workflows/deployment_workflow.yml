@@ -120,6 +120,8 @@ jobs:
           image: gcr.io/${{ secrets.PROJECT_ID }}/${{ inputs.image_name }}:${{ github.sha }}
           service: nexus-link-web-${{ inputs.environment }}
           region: us-central1
+          env_vars: |
+            VITE_API_BASE_URL: https://nexus-link-api-${{ inputs.environment }}-788538598885.us-central1.run.app/api/v1/
       
       - name: Use output
         run: echo "The URL is ${{ steps.deploy.outputs.url }}"
