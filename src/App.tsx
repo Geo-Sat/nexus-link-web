@@ -54,18 +54,18 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Joyride
-            run={runTour}
-            steps={tourSteps}
-            continuous
-            showProgress
-            showSkipButton
-            styles={{
-              options: {
-                zIndex: 10000,
-              },
-            }}
-          />
+          {/*<Joyride*/}
+          {/*  run={runTour}*/}
+          {/*  steps={tourSteps}*/}
+          {/*  continuous*/}
+          {/*  showProgress*/}
+          {/*  showSkipButton*/}
+          {/*  styles={{*/}
+          {/*    options: {*/}
+          {/*      zIndex: 10000,*/}
+          {/*    },*/}
+          {/*  }}*/}
+          {/*/>*/}
           <Routes>
             {appRoutes.map((route, index) => (
               <Route

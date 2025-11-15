@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { DataTable } from '@/components/shared/DataTable';
 import { SlideOver } from '@/components/shared/SlideOver';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,10 @@ import { PlusCircle, Building2, Check, X } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import {fetchVehicles} from "@/data/mockVehicles.ts";
+import {fetchAccounts} from "@/data/mockAccount.ts";
+import {useToast} from "@/hooks/use-toast.ts";
+import {LoadingView} from "@/components/shared/LoadingView.tsx";
 
 const mockAccounts = [
   {
@@ -73,39 +77,64 @@ const columns = [
 ];
 
 export default function AccountsPage() {
-  const [isAddingAccount, setIsAddingAccount] = useState(false);
+    const [isAddingAccount, setIsAddingAccount] = useState(false);
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(true);
 
-  return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Account Management</h1>
-          <p className="text-muted-foreground">
-            Manage and monitor all client accounts
-          </p>
+    useEffect(() => {
+      const loadData = async () => {
+          try {
+              toast({
+                  title: "Data Loaded",
+                  description: `drivers loaded`,
+              });
+          } catch (error) {
+              console.error('Failed to load data:', error);
+              toast({
+                  title: "Error",
+                  description: "Failed to load data",
+                  variant: "destructive",
+              });
+              setLoading(false);
+          }
+      };
+
+      loadData();
+  }, [toast]);
+    if (loading) {
+        return (<LoadingView headline={`Loading`} subline={`Fetching data from the server...`}/>);
+    }
+      return (
+        <div className="container mx-auto py-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-semibold">Account Management</h1>
+              <p className="text-muted-foreground">
+                Manage and monitor all client accounts
+              </p>
+            </div>
+            <Button onClick={() => setIsAddingAccount(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Account
+            </Button>
+          </div>
+
+          <DataTable
+            columns={columns}
+            data={mockAccounts}
+            title="Accounts"
+          />
+
+          <SlideOver
+            isOpen={isAddingAccount}
+            onClose={() => setIsAddingAccount(false)}
+            title="Add New Account"
+          >
+            {/* Add account form will go here */}
+            <div className="space-y-4">
+              {/* Form components will go here */}
+            </div>
+          </SlideOver>
         </div>
-        <Button onClick={() => setIsAddingAccount(true)}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add Account
-        </Button>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={mockAccounts}
-        title="Accounts"
-      />
-
-      <SlideOver
-        isOpen={isAddingAccount}
-        onClose={() => setIsAddingAccount(false)}
-        title="Add New Account"
-      >
-        {/* Add account form will go here */}
-        <div className="space-y-4">
-          {/* Form components will go here */}
-        </div>
-      </SlideOver>
-    </div>
-  );
+      );
 }

@@ -1,10 +1,10 @@
 import React from 'react';
 import { LoginPage } from './pages/Login';
 import { DashboardPage } from './pages/Dashboard';
-import { MapsPage } from './pages/Maps';
+import { MapsPage } from './pages/maps/Maps.tsx';
 import { TripsPage } from './pages/Trips';
 import { AssetsPage } from './pages/Assets';
-import { AccountsPage } from './pages/Accounts';
+import { AccountsPage } from './pages/accounts/Accounts.tsx';
 import { TrackingPage } from './pages/Tracking';
 import { LandingPage } from './pages/Landing';
 import NotFound from './pages/NotFound';
@@ -121,7 +121,7 @@ export const appRoutes: AppRoute[] = [
     path: '/',
     element: null,
     isPrivate: false,
-    redirectTo: '/landing',
+    redirectTo: '/maps',
   },
   {
     path: '*',

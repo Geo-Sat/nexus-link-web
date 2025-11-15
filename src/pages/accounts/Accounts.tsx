@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import {useState, useMemo, useEffect} from 'react'
 import {
   Table,
   TableBody,
@@ -6,11 +6,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+} from '@/components/ui/table.tsx'
+import { Button } from '@/components/ui/button.tsx'
+import { Input } from '@/components/ui/input.tsx'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.tsx'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog.tsx'
 import { 
   PlusIcon, 
   EditIcon, 
@@ -32,94 +32,66 @@ import {
   ChevronsRightIcon,
   ArrowUpDownIcon
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
-interface Account {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  company?: string
-  devices: number
-  maxDevices: number
-  status: 'active' | 'inactive' | 'suspended'
-  subscription: 'basic' | 'pro' | 'enterprise'
-  createdAt: string
-  lastLogin?: string
-  address?: string
-}
-
-const mockAccounts: Account[] = [
-  {
-    id: '1',
-    name: 'ABC Transport',
-    email: 'info@abctransport.com',
-    phone: '+254712345678',
-    company: 'ABC Transport Ltd',
-    devices: 5,
-    maxDevices: 10,
-    status: 'active',
-    subscription: 'pro',
-    createdAt: '2025-09-01T10:00:00Z',
-    lastLogin: '2025-09-04T08:30:00Z',
-    address: 'Nairobi, Kenya'
-  },
-  {
-    id: '2',
-    name: 'XYZ Logistics',
-    email: 'admin@xyzlogistics.com',
-    phone: '+254723456789',
-    company: 'XYZ Logistics Inc',
-    devices: 12,
-    maxDevices: 15,
-    status: 'active',
-    subscription: 'enterprise',
-    createdAt: '2025-08-15T14:20:00Z',
-    lastLogin: '2025-09-04T09:15:00Z',
-    address: 'Mombasa, Kenya'
-  },
-  {
-    id: '3',
-    name: 'Quick Deliveries',
-    email: 'support@quickdeliveries.com',
-    devices: 3,
-    maxDevices: 5,
-    status: 'inactive',
-    subscription: 'basic',
-    createdAt: '2025-09-03T16:45:00Z'
-  },
-  // Add more mock data for pagination testing
-  ...Array.from({ length: 27 }, (_, i) => ({
-    id: `${i + 4}`,
-    name: `Company ${i + 1}`,
-    email: `contact@company${i + 1}.com`,
-    phone: i % 3 === 0 ? undefined : `+2547${34567890 + i}`,
-    company: i % 4 === 0 ? undefined : `Company ${i + 1} Ltd`,
-    devices: (i % 10) + 1,
-    maxDevices: (i % 10) + 5,
-    status: ['active', 'inactive', 'suspended'][i % 3] as 'active' | 'inactive' | 'suspended',
-    subscription: ['basic', 'pro', 'enterprise'][i % 3] as 'basic' | 'pro' | 'enterprise',
-    createdAt: new Date(Date.now() - (i * 86400000 * 30)).toISOString(),
-    lastLogin: i % 5 === 0 ? undefined : new Date(Date.now() - (i * 3600000)).toISOString(),
-    address: i % 6 === 0 ? undefined : `Address ${i + 1}, City ${i + 1}`
-  }))
-]
+import { Badge } from '@/components/ui/badge.tsx'
+import { Separator } from '@/components/ui/separator.tsx'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx'
+import { Label } from '@/components/ui/label.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.tsx'
+import { useToast } from '@/hooks/use-toast.ts';
+import {LoadingView} from "@/components/shared/LoadingView.tsx";
+import axios from 'axios';
+import { Account } from '@/types/account.ts';
 
 export function AccountsPage() {
-  const [accounts, setAccounts] = useState<Account[]>(mockAccounts)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
-  const [isSidePanelOpen, setIsSidePanelOpen] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [sortField, setSortField] = useState<keyof Account>('createdAt')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+    const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
+    const [accounts, setAccounts] = useState<Account[]>([])
+    const [searchTerm, setSearchTerm] = useState('')
+    const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
+    const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
+    const [isSidePanelOpen, setIsSidePanelOpen] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
+    const [sortField, setSortField] = useState<keyof Account>('created_at')
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+    const NEXT_PUBLIC_API_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMjMzNTc2LCJpYXQiOjE3NjMyMzE3NzYsImp0aSI6IjljN2QwMTBiZjQ5YzRlNWU5NWRmOTBlN2UyMWI2NDllIiwidXNlcl9pZCI6IjEifQ.WvWOT0BbLRoemRs4YKGYubHXc7yS0Fr6_NTJgzTJoWM"
+    // Load initial data
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const response = await axios.get('http://127.0.0.1:8000/api/v1/accounts/accounts/', {
+                    headers: {
+                        'Authorization': `Bearer ${NEXT_PUBLIC_API_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                // Extract the accounts data from the results array
+                const accountsData = response.data.results;
+
+                // Process your data here - set accounts data to state
+                setAccounts(accountsData);
+
+                toast({
+                    title: "Data Loaded",
+                    description: `Loaded ${accountsData.length} accounts`,
+                });
+                setLoading(false);
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                toast({
+                    title: "Error",
+                    description: "Failed to load data",
+                    variant: "destructive",
+                });
+                setLoading(false);
+            }
+        };
+
+        loadData();
+    }, [toast]);
 
   const filteredAccounts = useMemo(() => {
     let result = accounts.filter(
@@ -252,13 +224,8 @@ export function AccountsPage() {
     document.body.removeChild(link)
   }
 
-  const getStatusColor = (status: Account['status']) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800'
-      case 'inactive': return 'bg-gray-100 text-gray-800'
-      case 'suspended': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+  const getStatusColor = (is_active: boolean) => {
+      return (is_active) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
   }
 
   const getSubscriptionColor = (subscription: Account['subscription']) => {
@@ -269,7 +236,9 @@ export function AccountsPage() {
       default: return 'bg-gray-100 text-gray-800'
     }
   }
-
+    if (loading) {
+        return (<LoadingView headline={`Accounts`} subline={`Loading, please wait...`} />)
+    }
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6 flex items-center justify-between">
@@ -352,7 +321,7 @@ export function AccountsPage() {
                       </TableHead>
                       <TableHead className="py-2 text-xs cursor-pointer hover:bg-accent">
                         <Button variant="ghost" onClick={() => handleSort('devices')} className="p-0 font-medium">
-                          Devices
+                          Assets
                           <ArrowUpDownIcon className="ml-1 h-3 w-3" />
                         </Button>
                       </TableHead>
@@ -383,7 +352,7 @@ export function AccountsPage() {
                         <TableCell className="font-medium py-2">{account.name}</TableCell>
                         <TableCell className="py-2">{account.email}</TableCell>
                         <TableCell className="py-2">{account.company || 'N/A'}</TableCell>
-                        <TableCell className="py-2">{account.devices}/{account.maxDevices}</TableCell>
+                        <TableCell className="py-2">{account.assets_count}</TableCell>
                         <TableCell className="py-2">
                           <span
                             className={`inline-flex rounded-full px-2 text-xs font-semibold ${getSubscriptionColor(account.subscription)}`}
@@ -393,12 +362,12 @@ export function AccountsPage() {
                         </TableCell>
                         <TableCell className="py-2">
                           <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${getStatusColor(account.status)}`}
+                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${getStatusColor(account.is_active)}`}
                           >
-                            {account.status}
+                            {(account.is_active) ? 'Active': 'In-active'}
                           </span>
                         </TableCell>
-                        <TableCell className="py-2">{new Date(account.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="py-2">{new Date(account.created_at).toLocaleDateString()}</TableCell>
                         <TableCell className="py-2">
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" onClick={() => handleViewAccount(account)} className="h-7 w-7">

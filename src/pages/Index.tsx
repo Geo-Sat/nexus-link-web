@@ -1,4 +1,4 @@
-import Maps from './Maps';
+import Maps from './maps/Maps.tsx';
 
 const Index = () => {
   return <Maps />;
