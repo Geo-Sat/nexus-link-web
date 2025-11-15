@@ -10,43 +10,57 @@ import { useCallback } from 'react'
 import { Particles } from 'react-tsparticles'
 import { loadFull } from 'tsparticles'
 import { Engine } from 'tsparticles-engine'
-import { mockUsers } from '@/data/mockUsers' // Import mock users
+import apiClient from '@/lib/api'
 
 export function LoginPage() {
-  const [username, setUsername] = useState('') // Changed from email to username
+  const [email, setEmail] = useState('') // Changed from email to username
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { user, setUser, setToken } = useAuth()
+  const { user, setUser, setRefresh, setAccess } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
     try {
-      const foundUser = mockUsers.find(
-        (u) => u.username === username && u.password === password
-      );
+      const response = await apiClient.post('auth/jwt/create/', {
+        email,
+        password,
+      });
 
-      if (foundUser) {
-        setUser(foundUser);
-        setToken('demo-token'); // Set a demo token
-        // Navigate after state is updated
-        window.location.href = '/dashboard';
+      const { refresh, access } = response.data;
+
+      if (refresh && access) {
+        setRefresh(refresh);
+        setAccess(access);
+
+        // after successful login, we pull user profile data from the server
+        const profileResponse = await apiClient.get('users/profiles/me/', {
+          headers: {
+            Authorization: `Bearer ${access}`,
+          },
+        });
+
+        const { id, accounts, name, user } = profileResponse.data;
+        if (id && accounts && name && user) {
+            setUser(user);
+            // redirect to dashboard
+            window.location.href = '/dashboard';
+        }
+
       } else {
-        alert('Invalid username or password');
+        alert('Invalid response from server');
       }
     } catch (error) {
       console.error('Login failed:', error)
+      alert('Invalid username or password');
     } finally {
       setIsLoading(false)
     }
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace /> // Redirect to dashboard
+      return <Navigate to="/dashboard" replace />
   }
 
   const particlesInit = useCallback(async (engine: Engine) => {
@@ -159,10 +173,10 @@ export function LoginPage() {
                       transition={{ duration: 0.3, delay: 0.1 }}
                     >
                       <Input
-                        type="text"
-                        placeholder="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                         className="bg-card/80"
                         disabled={isLoading}

@@ -1,7 +1,7 @@
 export interface User {
-  id: number;
-  name: string;
-  username: string;
+  id?: number;
+  name?: string;
+  email: string;
   password?: string; // Password should be optional as it should not be stored in the client-side user object
-  role: 'admin' | 'front_office' | 'client' | 'partner';
+  role?: 'admin' | 'account_user' | 'client' | 'partner';
 }

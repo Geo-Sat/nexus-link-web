@@ -41,6 +41,7 @@ import { useToast } from '@/hooks/use-toast.ts';
 import {LoadingView} from "@/components/shared/LoadingView.tsx";
 import axios from 'axios';
 import { Account } from '@/types/account.ts';
+import apiClient from '@/lib/api'
 
 export function AccountsPage() {
     const [loading, setLoading] = useState(true);
@@ -55,18 +56,12 @@ export function AccountsPage() {
     const [itemsPerPage, setItemsPerPage] = useState(10)
     const [sortField, setSortField] = useState<keyof Account>('created_at')
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
-    const NEXT_PUBLIC_API_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMjMzNTc2LCJpYXQiOjE3NjMyMzE3NzYsImp0aSI6IjljN2QwMTBiZjQ5YzRlNWU5NWRmOTBlN2UyMWI2NDllIiwidXNlcl9pZCI6IjEifQ.WvWOT0BbLRoemRs4YKGYubHXc7yS0Fr6_NTJgzTJoWM"
     // Load initial data
     useEffect(() => {
         const loadData = async () => {
             try {
-                const response = await axios.get('http://127.0.0.1:8000/api/v1/accounts/accounts/', {
-                    headers: {
-                        'Authorization': `Bearer ${NEXT_PUBLIC_API_TOKEN}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                });
+
+                const response = await apiClient.get('accounts/accounts');
 
                 // Extract the accounts data from the results array
                 const accountsData = response.data.results;

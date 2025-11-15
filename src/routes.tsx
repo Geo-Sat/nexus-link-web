@@ -36,7 +36,7 @@ export const appRoutes: AppRoute[] = [
     element: <DashboardPage />,
     title: 'Dashboard',
     isPrivate: true,
-    roles: ['admin', 'front_office', 'client', 'partner'],
+    roles: ['admin', 'account_user', 'client', 'partner'],
   },
   {
     path: '/maps',
