@@ -105,7 +105,7 @@ const mockAssets: Asset[] = [
   }))
 ]
 
-export function AssetsPage() {
+export function AssetsPage1() {
   const [assets, setAssets] = useState<Asset[]>(mockAssets)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')

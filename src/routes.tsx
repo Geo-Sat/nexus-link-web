@@ -2,22 +2,20 @@ import React from 'react';
 import { LoginPage } from './pages/Login';
 import { DashboardPage } from './pages/Dashboard';
 import { MapsPage } from './pages/maps/Maps.tsx';
-import { TripsPage } from './pages/Trips';
-import { AssetsPage } from './pages/Assets';
 import { AccountsPage } from './pages/accounts/Accounts.tsx';
-import { TrackingPage } from './pages/Tracking';
-import { LandingPage } from './pages/Landing';
+import { PartnersPage } from "@/pages/partners/Partners.tsx";
+import { AssetsPage } from "@/pages/assets/Assets.tsx";
 import NotFound from './pages/NotFound';
 
-// Define a type for our route objects for better type safety
+
 interface AppRoute {
   path: string;
   element: React.ReactNode;
-  title?: string; // Added title for sidebar
-  section?: string; // Added section for sidebar grouping
+  title?: string;
+  section?: string;
   isPrivate?: boolean;
-  roles?: string[]; // Added roles for RBAC
-  redirectTo?: string; // For redirects like '/' to '/landing'
+  roles?: string[];
+  redirectTo?: string;
 }
 
 export const appRoutes: AppRoute[] = [
@@ -27,31 +25,28 @@ export const appRoutes: AppRoute[] = [
     isPrivate: false,
   },
   {
-    path: '/landing',
-    element: <LandingPage />,
-    isPrivate: false,
+      path: '/dashboard',
+      element: <DashboardPage />,
+      title: 'Dashboard',
+      section: 'Home',
+      isPrivate: true,
+      roles: ['admin', 'staff', 'account_user', 'account_admin', 'partner_admin']
   },
   {
-    path: '/dashboard',
-    element: <DashboardPage />,
-    title: 'Dashboard',
-    isPrivate: true,
-    roles: ['admin', 'account_user', 'client', 'partner'],
+      path: '/maps',
+      element: <MapsPage />,
+      title: 'Maps',
+      section: 'Home',
+      isPrivate: true,
+    roles: ['admin', 'staff', 'account_user', 'account_admin', 'partner_admin'],
   },
   {
-    path: '/maps',
-    element: <MapsPage />,
-    title: 'Maps',
-    isPrivate: true,
-    roles: ['admin', 'front_office'],
-  },
-  {
-    path: '/tracking',
-    element: <TrackingPage />,
-    title: 'Vehicles',
+    path: '/partners',
+    element: <PartnersPage />,
+    title: 'Partners',
     section: 'App',
     isPrivate: true,
-    roles: ['admin', 'front_office', 'client', 'partner'],
+    roles: ['admin', 'staff'],
   },
   {
     path: '/accounts',
@@ -59,7 +54,7 @@ export const appRoutes: AppRoute[] = [
     title: 'Accounts',
     section: 'App',
     isPrivate: true,
-    roles: ['admin'],
+    roles: ['admin', 'staff'],
   },
   {
     path: '/assets',
@@ -67,61 +62,61 @@ export const appRoutes: AppRoute[] = [
     title: 'Assets Info',
     section: 'App',
     isPrivate: true,
-    roles: ['admin', 'front_office'],
+    roles: ['admin', 'staff', 'account_user', 'account_admin', 'partner_admin'],
   },
-  {
-    path: '/trips',
-    element: <TripsPage />,
-    title: 'Trips',
-    section: 'App',
-    isPrivate: true,
-    roles: ['admin', 'front_office', 'client', 'partner'],
-  },
-  {
-    path: '/zones',
-    element: <NotFound />,
-    title: 'Zones',
-    section: 'App',
-    isPrivate: true,
-    roles: ['admin', 'front_office'],
-  },
-  {
-    path: '/alerts',
-    element: <NotFound />,
-    title: 'Alerts',
-    section: 'App',
-    isPrivate: true,
-    roles: ['admin', 'front_office', 'client', 'partner'],
-  },
-  {
-    path: '/reports',
-    element: <NotFound />,
-    title: 'Reports',
-    section: 'App',
-    isPrivate: true,
-    roles: ['admin', 'front_office'],
-  },
-  {
-    path: '/settings',
-    element: <NotFound />,
-    title: 'Settings',
-    section: 'Account',
-    isPrivate: true,
-    roles: ['admin', 'front_office', 'client', 'partner'],
-  },
+  // {
+  //   path: '/trips',
+  //   element: <TripsPage />,
+  //   title: 'Trips',
+  //   section: 'App',
+  //   isPrivate: true,
+  //   roles: ['admin', 'staff', 'account_user', 'account_admin', 'partner_admin'],
+  // },
+  // {
+  //   path: '/zones',
+  //   element: <NotFound />,
+  //   title: 'Zones',
+  //   section: 'App',
+  //   isPrivate: true,
+  //   roles: ['admin', 'staff'],
+  // },
+  // {
+  //   path: '/alerts',
+  //   element: <NotFound />,
+  //   title: 'Alerts',
+  //   section: 'App',
+  //   isPrivate: true,
+  //   roles: ['admin', 'staff'],
+  // },
+  // {
+  //   path: '/reports',
+  //   element: <NotFound />,
+  //   title: 'Reports',
+  //   section: 'App',
+  //   isPrivate: true,
+  //   roles: ['admin', 'staff'],
+  // },
+  // {
+  //   path: '/settings',
+  //   element: <NotFound />,
+  //   title: 'Settings',
+  //   section: 'Account',
+  //   isPrivate: true,
+  //   roles: ['admin', 'staff', 'account_user', 'account_admin', 'partner_admin'],
+  // },
   {
     path: '/profile',
     element: <NotFound />,
     title: 'Profile',
-    section: 'Account',
+    section: 'User Account',
     isPrivate: true,
-    roles: ['admin', 'front_office', 'client', 'partner'],
+    roles: ['admin', 'staff', 'account_user', 'account_admin', 'partner_admin'],
   },
   {
     path: '/',
     element: null,
     isPrivate: false,
-    redirectTo: '/maps',
+    redirectTo: '/dashboard',
   },
   {
     path: '*',

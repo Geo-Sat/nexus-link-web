@@ -33,8 +33,8 @@ export function MapsPage() {
 
   // Get WebSocket URL based on environment
   const getWebSocketUrl = () => {
-    let wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    let imeiParam = '0358657105381656'; 
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const imeiParam = '0358657105381656';
     let hostParam = window.location.host;
     hostParam = '65.109.170.207:8000';
     // For development - use localhost or your server URL
@@ -143,7 +143,7 @@ export function MapsPage() {
   };
 
   const handleVehicleUpdate = (data: LiveTrackingData) => {
-    var updatedVehicle: Partial<Vehicle> = {
+    const updatedVehicle: Partial<Vehicle> = {
       imei: data.imei,
       coordinates: [data.longitude, data.latitude],
       speed: data.speed,
