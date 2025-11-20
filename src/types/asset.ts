@@ -5,18 +5,27 @@ import {Account} from "@/types/account.ts";
 export type AssetCategory = 'car' | 'motorcycle' | 'truck' | 'bus' | 'van' | 'other';
 
 export interface AssetTrackingAccount {
+    id: number
     account_id: number
     device: Device
-    device_location: string
-    installation_date: string
-    installation_status: string
+    coordinates: number[]
+    speed: number
+    heading: number
+    last_update_time: Date
+    battery_level: number
+    is_active: boolean
     created_at: string
     updated_at: string
+    installation_date?: string
+    installation_status?: "pending" | "approved" | "rejected" | "expired"
     installation_notes?: string
     installation_photo_url?: string
     installation_video_url?: string
     installation_address?: string
     installation_agent?: User
+    device_installation_location?: string
+    asset?: Asset
+    status?: "online" | "offline"
 }
 
 export interface Asset {
@@ -35,6 +44,10 @@ export interface Asset {
     account: Account
     account_name?: string
     account_phone?: number
+    isSelected?: boolean
+    status?: string
+    last_update_time?: Date
+    speed?: number
     asset_tracking_accounts?: [AssetTrackingAccount]
 }
 

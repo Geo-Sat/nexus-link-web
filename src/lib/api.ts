@@ -19,7 +19,13 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
       const token = JSON.parse(localStorage.getItem('auth-storage') || '{}').state?.access;
-      console.log('Token:', token);
+      // check if token is available and not expired
+      // if token is expired, regenerate it via aping /auth/refresh-token
+      if (token && Date.now() > JSON.parse(atob(token.split('.')[1])).exp * 1000) {
+          console.log('Token expired, logout...');
+          localStorage.removeItem('auth-storage');
+          window.location.href = '/login';
+      }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
