@@ -61,6 +61,7 @@ export function MapsPage() {
       }
     };
     const handleAssetSelect = (assetId: string, isSelected: boolean) => {
+        setSelectedAssetIds([]);
         setSelectedAssetIds(prev =>
             isSelected
                 ? [...prev, assetId]

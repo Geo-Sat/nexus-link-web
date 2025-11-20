@@ -27,19 +27,19 @@ const MapComponent: React.FC<MapComponentProps> = ({
   showingHistory,
   onMapLoad
 }) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const map = useRef<google.maps.Map | null>(null);
-  const markers = useRef<{ [key: string]: google.maps.Marker }>({});
-  const polylines = useRef<{ [key: string]: google.maps.Polyline }>({});
-  const infoWindow = useRef<google.maps.InfoWindow | null>(null);
-  const markerClusterer = useRef<MarkerClusterer | null>(null);
+    const mapRef = useRef<HTMLDivElement>(null);
+    const map = useRef<google.maps.Map | null>(null);
+    const markers = useRef<{ [key: string]: google.maps.Marker }>({});
+    const polylines = useRef<{ [key: string]: google.maps.Polyline }>({});
+    const infoWindow = useRef<google.maps.InfoWindow | null>(null);
+    const markerClusterer = useRef<MarkerClusterer | null>(null);
 
-  useEffect(() => {
-    if (!mapRef.current || map.current) return;
+    useEffect(() => {
+        if (!mapRef.current || map.current) return;
 
-    map.current = new google.maps.Map(mapRef.current, {
+        map.current = new google.maps.Map(mapRef.current, {
       center: NAIROBI_CENTER,
-      zoom: 6,
+      zoom: 8,
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       mapTypeControl: false,
       streetViewControl: false,
@@ -51,45 +51,53 @@ const MapComponent: React.FC<MapComponentProps> = ({
       gestureHandling: 'greedy'
     });
 
-    // Initialize InfoWindow with better styling and behavior
-    infoWindow.current = new google.maps.InfoWindow({
-      disableAutoPan: true, // Prevent map from panning to center the info window
-      maxWidth: 320,
-      pixelOffset: new google.maps.Size(0, -20) // Offset to position above marker
-    });
+        infoWindow.current = new google.maps.InfoWindow({
+          disableAutoPan: true, // Prevent map from panning to center the info window
+          maxWidth: 320,
+          pixelOffset: new google.maps.Size(0, -20) // Offset to position above marker
+        });
 
-    if (onMapLoad) {
-      onMapLoad();
-    }
-  }, [onMapLoad]);
+        if (onMapLoad) {
+          onMapLoad();
+        }
+    }, [onMapLoad]);
 
     const createMarker = useCallback((assetTrackingAccount: AssetTrackingAccount): google.maps.Symbol => {
-      const fillColor = '#64748b'; // inactive color
-      const scale = 1;
+        const getFillColor = () => {
+            switch (assetTrackingAccount.status) {
+                case 'online':
+                    return '#10b981'; // emerald-500
+                case 'offline':
+                    return '#ef4444'; // red-500
+                default:
+                    return '#f59e0b'; // amber-500
+            }
+        };
 
-      return {
-          path: `M 3,11 L 22,2 L 13,21 L 11,13 L 3,11 Z`,
-          fillColor: fillColor,
-          fillOpacity: 0.9,
-          strokeColor: '#ffffff',
-          strokeWeight: 1.5,
-          scale: scale,
-          anchor: new google.maps.Point(14, 11), // Adjusted anchor for better centering
-          rotation: assetTrackingAccount.heading || 0
-      };
-  }, []);
+        const fillColor = getFillColor();
+        const scale = 1.8;
+        const carIcon: google.maps.Symbol = {
+            path: `M 3,11 L 22,2 L 13,21 L 11,13 L 3,11 Z`,
+            fillColor: fillColor,
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+            scale: scale,
+            anchor: new google.maps.Point(14, 11), // Adjusted anchor for better centering
+            rotation: assetTrackingAccount.heading || 0
+        }
+        return carIcon;
+    }, []);
+
 
     useEffect(() => {
         if (!map.current) return;
 
-        const newMarkers: google.maps.Marker[] = [];
-        const existingMarkerIds = new Set(Object.keys(markers.current));
+        if (!markerClusterer.current) {
+            markerClusterer.current = new MarkerClusterer({ map: map.current });
+        }
 
-        // update or create markers for each assetTrackingAccount
-        asset?.tracking_accounts?.forEach((assetTrackingAccount) => {
-            const markerId = assetTrackingAccount.id.toString();
-            const existingMarker = markers.current[markerId];
-        })
+        const newMarkers: google.maps.Marker[] = [];
 
         asset?.tracking_accounts?.forEach(asset_tracking => {
             // split coordinates into latitude and longitude cause its comma separated
@@ -109,7 +117,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
                     animateMarkerRotation(asset_tracking.id.toString(), marker, oldIcon.rotation || 0, asset_tracking.heading || 0);
                 }
                 newMarkers.push(marker);
-                existingMarkerIds.delete(asset_tracking.id.toString());
             } else {
                 const marker = new google.maps.Marker({
                     position: position,
@@ -133,10 +140,27 @@ const MapComponent: React.FC<MapComponentProps> = ({
             }
         });
 
-    })
+        markerClusterer.current.clearMarkers();
+        markerClusterer.current.addMarkers(newMarkers);
+
+        if (newMarkers.length === 1) {
+            const marker = newMarkers[0];
+            map.current.panTo(marker.getPosition()!);
+            map.current.setZoom(15);
+
+            // A small delay for a smoother experience
+            setTimeout(() => {
+                google.maps.event.trigger(marker, 'click');
+            }, 300);
+        } else {
+            infoWindow.current?.close();
+        }
+
+    },[asset, showingHistory, createMarker]);
+
     // Function to generate popup content with updated styling
     const createInfoWindowContent = (assetTrackingAccount: AssetTrackingAccount): string => {
-        const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${assetTrackingAccount.coordinates[1]},${assetTrackingAccount.coordinates[0]}&travelmode=driving`;
+        const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${assetTrackingAccount.coordinates}&travelmode=driving`;
         const trackingUrl = `https://btly.com/track/${assetTrackingAccount.id}`;
         const detailsUrl = `/tracking/${assetTrackingAccount.id}`;
 
@@ -144,7 +168,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
         <div style="min-width: 280px">
           <div style="margin-bottom: 0.5rem">
             <div style="font-size: 0.875rem; font-weight: 600; color: #475569">
-              ${assetTrackingAccount.asset.registration}
+              ${asset.registration}
             </div>
             <div style="font-size: 0.75rem; color: #64748b">
               ${assetTrackingAccount.device.imei}
@@ -190,7 +214,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
                 Location
               </div>
               <div style="font-size: 0.75rem; font-weight: 500">
-                ${assetTrackingAccount.coordinates.join(', ')}
+                ${assetTrackingAccount.coordinates}
               </div>
             </div>
           </div>
