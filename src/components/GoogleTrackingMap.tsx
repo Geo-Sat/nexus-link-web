@@ -86,14 +86,16 @@ const MapComponent: React.FC<MapComponentProps> = ({
         const existingMarkerIds = new Set(Object.keys(markers.current));
 
         // update or create markers for each assetTrackingAccount
-        asset?.asset_tracking_accounts.forEach((assetTrackingAccount) => {
+        asset?.tracking_accounts?.forEach((assetTrackingAccount) => {
             const markerId = assetTrackingAccount.id.toString();
             const existingMarker = markers.current[markerId];
         })
 
-        asset?.asset_tracking_accounts.forEach(asset_tracking => {
+        asset?.tracking_accounts?.forEach(asset_tracking => {
+            // split coordinates into latitude and longitude cause its comma separated
+            const coordinates = asset_tracking.coordinates.split(',');
             // create a LatLng object from the coordinates
-            const position: LatLng = new google.maps.LatLng(asset_tracking.coordinates[0], asset_tracking.coordinates[1]);
+            const position: LatLng = new google.maps.LatLng(parseFloat(coordinates[0]), parseFloat(coordinates[1]));
 
             if (markers.current[asset_tracking.id]) {
                 // Update existing marker

@@ -6,9 +6,8 @@ export type AssetCategory = 'car' | 'motorcycle' | 'truck' | 'bus' | 'van' | 'ot
 
 export interface AssetTrackingAccount {
     id: number
-    account_id: number
     device: Device
-    coordinates: number[]
+    coordinates: string
     speed: number
     heading: number
     last_update_time: Date
@@ -48,7 +47,7 @@ export interface Asset {
     status?: string
     last_update_time?: Date
     speed?: number
-    asset_tracking_accounts?: [AssetTrackingAccount]
+    tracking_accounts?: [AssetTrackingAccount]
 }
 
 
