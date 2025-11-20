@@ -35,7 +35,5 @@ EXPOSE 3000
 
 ENV PORT 3000
 ENV HOST 0.0.0.0
-ENV VITE_API_BASE_URL=""
-ENV VITE_WS_BASE_URL=""
 
 CMD sh -c "/inject-env.sh && envsubst '\$PORT' < /etc/nginx/conf.d/configfile.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
