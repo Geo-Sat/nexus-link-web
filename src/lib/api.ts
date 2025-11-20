@@ -1,9 +1,8 @@
 import axios from 'axios';
-import { useAuth } from "@/lib/auth.ts";
 
 // Create an Axios instance
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: "__VITE_API_BASE_URL__",
   headers: {
     'Content-Type': 'application/json',
   },
