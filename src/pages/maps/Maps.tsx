@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleTrackingMap } from '@/components/GoogleTrackingMap.tsx';
 import { AssetSearchOverlay } from '@/components/AssetSearchOverlay.tsx';
-import { SelectedVehiclesTable } from '@/components/SelectedVehiclesTable.tsx';
 import { useToast } from '@/hooks/use-toast.ts';
 import '@/styles/overlays.css';
 import { X, ChevronDown, Search, Check, ChevronUp, Car } from 'lucide-react';
 import { Account } from '@/types/account.ts';
 import { useNavigate } from 'react-router-dom';
-import {LoadingView} from "@/components/shared/LoadingView.tsx";
+import { LoadingView } from "@/components/shared/LoadingView.tsx";
 import apiClient from "@/lib/api.ts";
-import {MapsData} from "@/types/pages/maps.ts";
-import {Asset} from "@/types/asset.ts";
+import { MapsData } from "@/types/pages/maps.ts";
+import { Asset } from "@/types/asset.ts";
 
 export function MapsPage() {
     const [loading, setLoading] = useState(true);

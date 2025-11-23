@@ -38,18 +38,18 @@ const MapComponent: React.FC<MapComponentProps> = ({
         if (!mapRef.current || map.current) return;
 
         map.current = new google.maps.Map(mapRef.current, {
-      center: NAIROBI_CENTER,
-      zoom: 8,
-      mapTypeId: google.maps.MapTypeId.ROADMAP,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: true,
-      zoomControl: true,
-      backgroundColor: '#f5f5f5',
-      clickableIcons: false,
-      disableDefaultUI: false,
-      gestureHandling: 'greedy'
-    });
+            center: NAIROBI_CENTER,
+            zoom: 9,
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: true,
+            zoomControl: true,
+            backgroundColor: '#f5f5f5',
+            clickableIcons: false,
+            disableDefaultUI: false,
+            gestureHandling: 'greedy'
+        });
 
         infoWindow.current = new google.maps.InfoWindow({
           disableAutoPan: true, // Prevent map from panning to center the info window
@@ -64,7 +64,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
     const createMarker = useCallback((assetTrackingAccount: AssetTrackingAccount): google.maps.Symbol => {
         const getFillColor = () => {
-            switch (assetTrackingAccount.status) {
+            switch (assetTrackingAccount?.devices_status.status) {
                 case 'online':
                     return '#10b981'; // emerald-500
                 case 'offline':
@@ -84,7 +84,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
             strokeWeight: 2,
             scale: scale,
             anchor: new google.maps.Point(14, 11), // Adjusted anchor for better centering
-            rotation: assetTrackingAccount.heading || 0
+            rotation: assetTrackingAccount.devices_status.heading || 0
         }
         return carIcon;
     }, []);
@@ -101,7 +101,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
         asset?.tracking_accounts?.forEach(asset_tracking => {
             // split coordinates into latitude and longitude cause its comma separated
-            const coordinates = asset_tracking.coordinates.split(',');
+            const coordinates = asset_tracking.devices_status.coordinates.split(',');
             // create a LatLng object from the coordinates
             const position: LatLng = new google.maps.LatLng(parseFloat(coordinates[0]), parseFloat(coordinates[1]));
 
@@ -113,8 +113,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
                 marker.setPosition(position);
                 marker.setIcon(newIcon);
 
-                if (oldIcon.rotation !== asset_tracking.heading) {
-                    animateMarkerRotation(asset_tracking.id.toString(), marker, oldIcon.rotation || 0, asset_tracking.heading || 0);
+                if (oldIcon.rotation !== asset_tracking?.devices_status.heading) {
+                    animateMarkerRotation(asset_tracking.id.toString(), marker, oldIcon.rotation || 0, asset_tracking.devices_status.heading || 0);
                 }
                 newMarkers.push(marker);
             } else {
@@ -160,7 +160,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
     // Function to generate popup content with updated styling
     const createInfoWindowContent = (assetTrackingAccount: AssetTrackingAccount): string => {
-        const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${assetTrackingAccount.coordinates}&travelmode=driving`;
+        const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${assetTrackingAccount.devices_status.coordinates}&travelmode=driving`;
         const trackingUrl = `https://btly.com/track/${assetTrackingAccount.id}`;
         const detailsUrl = `/tracking/${assetTrackingAccount.id}`;
 
@@ -174,7 +174,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
               ${assetTrackingAccount.device.imei}
             </div>
             <div style="font-size: 0.75rem; color: #64748b">
-              Last Update: ${formatDistanceToNow(new Date(assetTrackingAccount.last_update_time))} ago
+              Last Update: ${formatDistanceToNow(new Date(assetTrackingAccount.devices_status.timestamp))} ago
             </div>
           </div>
     
@@ -184,10 +184,10 @@ const MapComponent: React.FC<MapComponentProps> = ({
                 Status
               </div>
               <div style="font-size: 0.75rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem">
-                <span style="display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 9999px; background-color: ${assetTrackingAccount.status === 'online' ? '#10b981' :
-            assetTrackingAccount.status === 'offline' ? '#ef4444' : '#3acd30ff'
+                <span style="display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 9999px; background-color: ${assetTrackingAccount.devices_status.status === 'online' ? '#10b981' :
+            assetTrackingAccount.devices_status.status === 'offline' ? '#ef4444' : '#3acd30ff'
           }"></span>
-                ${assetTrackingAccount.status}
+                ${assetTrackingAccount.devices_status.status}
               </div>
             </div>
     
@@ -196,7 +196,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
                 Speed
               </div>
               <div style="font-size: 0.75rem; font-weight: 500">
-                ${assetTrackingAccount.speed.toFixed(2)} km/h
+                ${assetTrackingAccount.devices_status.speed.toFixed(2)} km/h
               </div>
             </div>
     
@@ -205,7 +205,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
                 Direction
               </div>
               <div style="font-size: 0.75rem; font-weight: 500">
-                ${assetTrackingAccount.heading.toFixed(2)}°
+                ${assetTrackingAccount.devices_status.heading.toFixed(2)}°
               </div>
             </div>
     
@@ -214,7 +214,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
                 Location
               </div>
               <div style="font-size: 0.75rem; font-weight: 500">
-                ${assetTrackingAccount.coordinates}
+                ${assetTrackingAccount.devices_status.coordinates}
               </div>
             </div>
           </div>

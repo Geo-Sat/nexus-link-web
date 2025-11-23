@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, MapPin, Clock, User, UserCircle } from 'lucide-react';
+import {Search, Filter, MapPin, Clock, User, UserCircle, TagIcon} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Vehicle } from '@/types/vehicle';
 import { cn } from '@/lib/utils';
 import { Account } from '@/types/account';
-import {Asset} from "@/types/asset.ts";
+import {Asset, AssetTrackingDeviceStatusInfo} from "@/types/asset.ts";
 
 interface AssetSearchOverlayProps {
   assets: Asset[];
@@ -29,6 +29,39 @@ export const AssetSearchOverlay: React.FC<AssetSearchOverlayProps> = ({assets, s
           return asset.registration.toLowerCase().includes(searchTerm.toLowerCase());
         });
     }, [assets, searchTerm]);
+
+    const determineSpeedStatus = (asset: Asset) => {
+        const trackingAccount = (asset.tracking_accounts.length > 0) ? asset.tracking_accounts[0] : null;
+        const deviceStatus = (trackingAccount !== null) ? trackingAccount.devices_status : null;
+        if (deviceStatus !== null){
+            let status = 'offline';
+            // status is determined based on time difference between last update and current time
+            const currentTime = new Date();
+            const lastUpdate = deviceStatus.timestamp;
+            if (lastUpdate) {
+                const timeDifference = 0;
+                // const timeDifference = currentTime.getTime() - lastUpdate.getTime();
+                const minutesAgo = Math.floor(timeDifference / (1000 * 60));
+                if (minutesAgo < 1) {
+                    status = 'online';
+                } else if (minutesAgo < 5) {
+                    status = 'warning';
+                } else {
+                    status = 'offline';
+                }
+            }
+            // update the status in the tracking account device status object
+            deviceStatus.status = status;
+            // if status is offline, set speed to 0
+            deviceStatus.speed = status === 'offline' ? 0 : deviceStatus.speed;
+            return deviceStatus;
+        }
+        return {
+            'status': 'offline',
+            'speed': 0,
+            'timestamp': new Date()
+        };
+    }
     const getStatusBadgeVariant = (status: string) => {
         switch (status) {
             case 'online': return 'default';
@@ -129,10 +162,10 @@ export const AssetSearchOverlay: React.FC<AssetSearchOverlayProps> = ({assets, s
                             {asset.registration}
                           </h3>
                           <Badge
-                            variant={getStatusBadgeVariant(asset.status)}
+                            variant={getStatusBadgeVariant(determineSpeedStatus(asset).status)}
                             className="text-xs"
                           >
-                            {asset.status}
+                            {determineSpeedStatus(asset).status}
                           </Badge>
                         </div>
 
@@ -150,24 +183,21 @@ export const AssetSearchOverlay: React.FC<AssetSearchOverlayProps> = ({assets, s
                             {vehicle.placeName}
                           </div> */}
                           <div className="flex items-center gap-1">
-                            <UserCircle className="h-3 w-3" />
-                            {asset.account ? asset.account.name : 'No Account'}
+                            <TagIcon className="h-3 w-3" />
+                            {(asset.asset_category) ? asset.asset_category : 'No Account'}
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {formatLastUpdate(asset.lastUpdate)}
+                            {(asset?.tracking_accounts.length > 0) ? formatLastUpdate(asset?.tracking_accounts[0]?.devices_status.timestamp) : 'No Data' }
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {asset.status === 'online' && (
-                      <div className="text-right text-xs">
-                        <div className={getStatusColor(asset.status)}>
-                          {asset.speed} km/h
+                    <div className="text-right text-xs">
+                        <div className={((asset?.tracking_accounts.length > 0)) ? getStatusColor(determineSpeedStatus(asset).status) : 'text-muted-foreground'}>
+                          {determineSpeedStatus(asset).speed } km/h
                         </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))}
