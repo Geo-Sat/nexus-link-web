@@ -51,6 +51,7 @@ export interface AssetTrackingDeviceStatusInfo {
 export interface AssetTrackingAccount {
     id: number
     device?: Device
+    imei?: string
     devices_status?: AssetTrackingDeviceStatusInfo
     is_active: boolean
     created_at: string
