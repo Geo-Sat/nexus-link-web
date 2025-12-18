@@ -348,8 +348,6 @@ export const GoogleTrackingMap: React.FC<GoogleTrackingMapProps> = (props) => {
         return <LoadingComponent />;
       case Status.FAILURE:
         return <ErrorComponent status={status} />;
-      case Status.SUCCESS:
-        return <MapComponent {...props} />;
     }
   };
 

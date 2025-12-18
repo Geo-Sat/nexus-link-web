@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleTrackingMap } from '@/components/GoogleTrackingMap.tsx';
-import { AssetSearchOverlay } from '@/components/AssetSearchOverlay.tsx';
-import { useToast } from '@/hooks/use-toast.ts';
+
 import '@/styles/overlays.css';
-import { X, ChevronDown, Search, Check, ChevronUp, Car } from 'lucide-react';
+import apiClient from '@/lib/api.ts';
 import { Account } from '@/types/account.ts';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast.ts';
+import { MapsData } from '@/types/pages/maps.ts';
+import { TrackingWebSocketData } from '@/types/tracking.ts';
+import { Asset, AssetTrackingAccount } from '@/types/asset.ts';
 import { LoadingView } from "@/components/shared/LoadingView.tsx";
-import apiClient from "@/lib/api.ts";
-import { MapsData } from "@/types/pages/maps.ts";
-import {Asset, AssetTrackingAccount} from "@/types/asset.ts";
-import {TrackingWebSocketData} from "@/types/tracking.ts";
+import { GoogleTrackingMap } from '@/components/GoogleTrackingMap.tsx';
+import { MapboxTrackingMap }  from '@/components/MapboxTrackingMap.tsx';
+import { AssetSearchOverlay } from '@/components/AssetSearchOverlay.tsx';
+import { X, ChevronDown, Search, Check, ChevronUp, Car, Map, Globe } from 'lucide-react';
+
 
 export function MapsPage() {
     const [loading, setLoading] = useState(true);
@@ -24,6 +27,7 @@ export function MapsPage() {
     const [accountSearchTerm, setAccountSearchTerm] = useState('');
     const { toast } = useToast();
     const [isAssetSearchOpen, setIsAssetSearchOpen] = useState(true);
+    const [mapType, setMapType] = useState<'google' | 'mapbox'>('google'); // Add mapType state
 
     const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'error'>('disconnected');
     const ws = useRef<WebSocket | null>(null);
@@ -182,6 +186,7 @@ export function MapsPage() {
         }
         console.log('Asset location update:', data);
     };
+
     const handleAssetStatusUpdate = (data: any) => {
         if (selectedCurrentAssetTrackingAccount) {
             setSelectedCurrentAssetTrackingAccount(prev => {
@@ -221,6 +226,7 @@ export function MapsPage() {
         }
         console.log('Asset status update:', data);
     };
+
     const getWebSocketUrl = (assetTrackingAccount: AssetTrackingAccount) => {
         const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
         // Use the asset's IMEI or unique identifier for the WebSocket connection
@@ -237,6 +243,7 @@ export function MapsPage() {
         // For production - use wss:// with the same host
         return `wss://${hostParam}/ws/${imeiParam}`;
     };
+
     const connectWebSocket = (asset: Asset, _index: number) => {
         // Close existing connection if any
         disconnectWebSocket();
@@ -291,6 +298,7 @@ export function MapsPage() {
             console.error('Failed to create WebSocket:', error);
         }
     };
+
     const disconnectWebSocket = () => {
         if (ws.current) {
             ws.current.close();
@@ -319,9 +327,33 @@ export function MapsPage() {
     return (
         <div className="relative flex-1 bg-background h-[calc(100vh-5rem)]">
             {/* Map container */}
-            <GoogleTrackingMap
-                ata={selectedCurrentAssetTrackingAccount}
-            />
+            {mapType === 'google' ? (
+                <GoogleTrackingMap
+                    ata={selectedCurrentAssetTrackingAccount}
+                />
+            ) : (
+                <MapboxTrackingMap
+                    ata={selectedCurrentAssetTrackingAccount}
+                />
+            )}
+
+            {/* Map type toggle */}
+            <div className="absolute top-4 right-4 z-10 bg-background p-1 rounded-full shadow-lg flex items-center gap-1">
+                <button
+                    className={`p-2 rounded-full ${mapType === 'google' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                    onClick={() => setMapType('google')}
+                    aria-label="Switch to Google Maps"
+                >
+                    <Globe size={20} />
+                </button>
+                <button
+                    className={`p-2 rounded-full ${mapType === 'mapbox' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                    onClick={() => setMapType('mapbox')}
+                    aria-label="Switch to Mapbox"
+                >
+                    <Map size={20} />
+                </button>
+            </div>
 
             {/* Search Overlay */}
             <div className="search-overlay glass-overlay p-0.5">

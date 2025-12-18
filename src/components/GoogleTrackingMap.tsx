@@ -21,10 +21,7 @@ interface MapComponentProps {
     onMapLoad?: () => void;
 }
 
-const MapComponent: React.FC<MapComponentProps> = ({
-                                                       ata,
-                                                       onMapLoad
-                                                   }) => {
+const MapComponent: React.FC<MapComponentProps> = ({ata, onMapLoad}) => {
     const mapRef = useRef<HTMLDivElement>(null);
     const map = useRef<google.maps.Map | null>(null);
     const markers = useRef<{ [key: string]: google.maps.Marker }>({});
@@ -315,7 +312,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
             newMarkers.push(marker);
 
             // Update info window if it's open
-            if (infoWindow.current && infoWindow.current.getMap()) {
+            if (infoWindow.current && infoWindow.current.isOpen) {
                 const content = createInfoWindowContent(ata);
                 infoWindow.current.setContent(content);
             }
