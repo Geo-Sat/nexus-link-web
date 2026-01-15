@@ -9,6 +9,7 @@ import { PrivateRoute } from '@/components/PrivateRoute'; // Import the new Priv
 import { appRoutes } from './routes';
 import Joyride from 'react-joyride';
 
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -40,7 +41,6 @@ const App = () => {
       placement: 'left',
     },
   ]);
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setRunTour(true);

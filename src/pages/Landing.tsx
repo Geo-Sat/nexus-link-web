@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GoogleTrackingMap } from '@/components/GoogleTrackingMap';
-import { VehicleSearchOverlay } from '@/components/VehicleSearchOverlay';
+import { VehicleSearchOverlay } from '@/components/AssetSearchOverlay.tsx';
 import { SelectedVehiclesTable } from '@/components/SelectedVehiclesTable';
 import { Vehicle } from '@/types/vehicle';
 import { fetchVehicles, simulateVehicleMovement } from '@/data/mockVehicles';

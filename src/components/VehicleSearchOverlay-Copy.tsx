@@ -7,18 +7,17 @@ import { Badge } from '@/components/ui/badge';
 import { Vehicle } from '@/types/vehicle';
 import { cn } from '@/lib/utils';
 import { Account } from '@/types/account';
+import {Asset} from "@/types/asset.ts";
 
 interface VehicleSearchOverlayProps {
-  vehicles: Vehicle[];
+  assets: Asset[];
   selectedVehicles: number[];
   onVehicleSelect: (vehicleId: number, isSelected: boolean) => void;
   onShowHistory: (vehicleIds: number[]) => void;
   showingHistory: boolean;
 }
 
-export const VehicleSearchOverlay: React.FC<VehicleSearchOverlayProps> = ({
-  vehicles,
-  selectedVehicles,
+export const VehicleSearchOverlay: React.FC<VehicleSearchOverlayProps> = ({assets, selectedVehicles,
   onVehicleSelect,
   onShowHistory,
   showingHistory
@@ -27,18 +26,15 @@ export const VehicleSearchOverlay: React.FC<VehicleSearchOverlayProps> = ({
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
   const filteredVehicles = useMemo(() => {
-    return vehicles.filter(vehicle => {
-      const matchesSearch = 
-        vehicle.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.driverName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.model.make.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.model.name.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter.length === 0 || statusFilter.includes(vehicle.status);
-      
+    return assets.filter(asset => {
+      const matchesSearch =
+          asset.registration.toLowerCase().includes(searchTerm.toLowerCase())
+
+      // const matchesStatus = statusFilter.length === 0 || statusFilter.includes(asset.i);
+
       return matchesSearch && matchesStatus;
     });
-  }, [vehicles, searchTerm, statusFilter]);
+  }, [assets, searchTerm, statusFilter]);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {

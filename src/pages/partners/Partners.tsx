@@ -39,56 +39,46 @@ import { Label } from '@/components/ui/label.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.tsx'
 import { useToast } from '@/hooks/use-toast.ts';
 import {LoadingView} from "@/components/shared/LoadingView.tsx";
-import axios from 'axios';
-import { Account } from '@/types/account.ts';
 import apiClient from '@/lib/api'
+import {Partner} from "@/types/partner.ts";
 
-export function AccountsPage() {
+export function PartnersPage() {
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
-    const [accounts, setAccounts] = useState<Account[]>([])
+    const [accounts, setRows] = useState<Partner[]>([])
     const [searchTerm, setSearchTerm] = useState('')
     const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
-    const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
+    const [selectedAccount, setSelectedRow] = useState<Partner | null>(null)
     const [isSidePanelOpen, setIsSidePanelOpen] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
-    const [sortField, setSortField] = useState<keyof Account>('created_at')
+    const [sortField, setSortField] = useState<keyof Partner>('created_at')
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+
     // Load initial data
     useEffect(() => {
         const loadData = async () => {
             try {
-
-                const response = await apiClient.get('accounts/accounts');
-
-                // Extract the accounts data from the results array
-                const accountsData = response.data.results;
-
-                // Process your data here - set accounts data to state
-                setAccounts(accountsData);
-
-                toast({
-                    title: "Data Loaded",
-                    description: `Loaded ${accountsData.length} accounts`,
-                });
+                const response = await apiClient.get('partners/partners');
+                const apiData = response.data.results;
+                setRows(apiData);
                 setLoading(false);
             } catch (error) {
-                console.error('Failed to load data:', error);
+                console.error('Failed to load partners', error);
                 toast({
-                    title: "Error",
-                    description: "Failed to load data",
+                    title: "Server Error",
+                    description: "No data to show.",
                     variant: "destructive",
                 });
                 setLoading(false);
             }
         };
 
-        loadData();
+        loadData().then().catch().finally();
     }, [toast]);
 
-  const filteredAccounts = useMemo(() => {
+    const filteredRows = useMemo(() => {
     const result = accounts.filter(
       (account) =>
         account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -124,14 +114,13 @@ export function AccountsPage() {
     return result
   }, [accounts, searchTerm, sortField, sortDirection])
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredAccounts.length / itemsPerPage)
-  const currentItems = useMemo(() => {
+    const totalPages = Math.ceil(filteredRows.length / itemsPerPage)
+    const currentItems = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredAccounts.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredAccounts, currentPage, itemsPerPage])
+    return filteredRows.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredRows, currentPage, itemsPerPage])
 
-  const handleSort = (field: keyof Account) => {
+  const handleSort = (field: keyof Partner) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
@@ -140,23 +129,23 @@ export function AccountsPage() {
     }
   }
 
-  const handleViewAccount = (account: Account) => {
-    setSelectedAccount(account)
+  const handleViewRow = (row: Partner) => {
+    setSelectedRow(row)
     setIsSidePanelOpen(true)
     setIsEditing(false)
   }
 
-  const handleEditAccount = (account: Account) => {
-    setSelectedAccount(account)
+  const handleEditRow = (row: Partner) => {
+    setSelectedRow(row)
     setIsSidePanelOpen(true)
     setIsEditing(true)
   }
 
-  const handleDeleteAccount = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this account?')) {
-      setAccounts(accounts.filter(account => account.id !== id))
+  const handleDeleteRow = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this row?')) {
+      setRows(accounts.filter(row => row.id !== id))
       if (selectedAccount?.id === id) {
-        setSelectedAccount(null)
+        setSelectedRow(null)
         setIsSidePanelOpen(false)
       }
       // Reset to first page if current page would be empty
@@ -166,71 +155,57 @@ export function AccountsPage() {
     }
   }
 
-  const handleSaveAccount = (updatedAccount: Account) => {
-    setAccounts(accounts.map(account => 
-      account.id === updatedAccount.id ? updatedAccount : account
+  const handleSaveRow = (updatedRow: Partner) => {
+    setRows(accounts.map(account =>
+      account.id === updatedRow.id ? updatedRow : account
     ))
-    setSelectedAccount(updatedAccount)
+    setSelectedRow(updatedRow)
     setIsEditing(false)
   }
 
   const handleCloseSidePanel = () => {
     setIsSidePanelOpen(false)
-    setSelectedAccount(null)
+    setSelectedRow(null)
     setIsEditing(false)
   }
 
-  const handleShareAccount = (account: Account) => {
-    alert(`Sharing account ${account.name} with others...`)
+  const handleShareRow = (row: Partner) => {
+    alert(`Sharing account ${row.name} with others...`)
   }
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Owner', 'Phone', 'Devices', 'Max Devices', 'Status', 'Subscription', 'Created At', 'Last Login', 'Address']
-    const csvData = filteredAccounts.map(account => [
-      account.name,
-      account.email,
-      // account.owner_type,
-      // account.phone || 'N/A',
-      // account.devices.toString(),
-      // account.maxDevices.toString(),
-      // account.status,
-      // account.subscription,
-      // new Date(account.createdAt).toLocaleDateString(),
-      // account.lastLogin ? new Date(account.lastLogin).toLocaleDateString() : 'N/A',
-      // account.address || 'N/A'
-    ])
+      const headers = [
+          'Name', 'Email'
+      ]
+      const csvData = filteredRows.map(row => [
+          row.name,
+          row.email,
+      ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.map(field => `"${field}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    
-    link.setAttribute('href', url)
-    link.setAttribute('download', `accounts_export_${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    // const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    // const link = document.createElement('a')
+    // const url = URL.createObjectURL(blob)
+    //
+    // link.setAttribute('href', url)
+    // link.setAttribute('download', `accounts_export_${new Date().toISOString().split('T')[0]}.csv`)
+    // link.style.visibility = 'hidden'
+    //
+    // document.body.appendChild(link)
+    // link.click()
+    // document.body.removeChild(link)
   }
 
   const getStatusColor = (is_active: boolean) => {
       return (is_active) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
   }
 
-
-
   if (loading) {
-      return (<LoadingView headline={`Accounts`} subline={`Loading, please wait...`} />)
+      return (<LoadingView headline={`Partners`} subline={`Loading, please wait...`} />)
   }
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Account Management</h1>
+        <h1 className="text-2xl font-bold">Partner Management</h1>
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === 'table' ? 'default' : 'outline'}
@@ -256,12 +231,12 @@ export function AccountsPage() {
             <DialogTrigger asChild>
               <Button className="h-8 text-xs">
                 <PlusIcon className="mr-1 h-3 w-3" />
-                Add Account
+                Add Partner
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Account</DialogTitle>
+                <DialogTitle>Add New Partner</DialogTitle>
               </DialogHeader>
               {/* Add form content here */}
             </DialogContent>
@@ -271,13 +246,13 @@ export function AccountsPage() {
 
       <div className="mb-4 flex items-center gap-4 flex-wrap">
         <Input
-          placeholder="Search accounts..."
+          placeholder="Search partners..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm text-sm h-8"
         />
         <div className="text-sm text-muted-foreground">
-          {filteredAccounts.length} account{filteredAccounts.length !== 1 ? 's' : ''} found
+          {filteredRows.length} account{filteredRows.length !== 1 ? 's' : ''} found
         </div>
       </div>
 
@@ -307,9 +282,8 @@ export function AccountsPage() {
                         </Button>
                       </TableHead>
                       <TableHead className="py-2 text-xs cursor-pointer hover:bg-accent">
-                        <Button variant="ghost" onClick={() => handleSort('assets_count')} className="p-0 font-medium">
-                          No of assets
-                          <ArrowUpDownIcon className="ml-1 h-3 w-3" />
+                        <Button variant="ghost" className="p-0 font-medium">
+                          Address
                         </Button>
                       </TableHead>
 
@@ -329,32 +303,32 @@ export function AccountsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {currentItems.map((account) => (
-                      <TableRow key={account.id} className="text-xs">
-                        <TableCell className="font-medium py-2">{account.name}</TableCell>
-                        <TableCell className="py-2">{account.email}</TableCell>
-                        <TableCell className="py-2">{account.phone || 'N/A'}</TableCell>
-                        <TableCell className="py-2">{account.assets_count}</TableCell>
+                    {currentItems.map((row) => (
+                      <TableRow key={row.id} className="text-xs">
+                        <TableCell className="font-medium py-2">{row.name}</TableCell>
+                        <TableCell className="py-2">{row.email}</TableCell>
+                        <TableCell className="py-2">{row.phone || 'N/A'}</TableCell>
+                        <TableCell className="py-2">{row.address}</TableCell>
                         <TableCell className="py-2">
                           <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${getStatusColor(account.is_active)}`}
+                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${getStatusColor(row.is_active)}`}
                           >
-                            {(account.is_active) ? 'Active': 'In-active'}
+                            {(row.is_active) ? 'Active': 'In-active'}
                           </span>
                         </TableCell>
-                        <TableCell className="py-2">{new Date(account.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="py-2">{new Date(row.created_at).toLocaleDateString()}</TableCell>
                         <TableCell className="py-2">
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => handleViewAccount(account)} className="h-7 w-7">
+                            <Button variant="ghost" size="icon" onClick={() => handleViewRow(row)} className="h-7 w-7">
                               <EyeIcon className="h-3 w-3" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleEditAccount(account)} className="h-7 w-7">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditRow(row)} className="h-7 w-7">
                               <EditIcon className="h-3 w-3" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteAccount(account.id)} className="h-7 w-7">
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(row.id)} className="h-7 w-7">
                               <TrashIcon className="h-3 w-3" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleShareAccount(account)} className="h-7 w-7">
+                            <Button variant="ghost" size="icon" onClick={() => handleShareRow(row)} className="h-7 w-7">
                               <ShareIcon className="h-3 w-3" />
                             </Button>
                           </div>
@@ -367,51 +341,51 @@ export function AccountsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {currentItems.map((account) => (
-                <Card key={account.id} className="overflow-hidden text-sm">
+              {currentItems.map((row) => (
+                <Card key={row.id} className="overflow-hidden text-sm">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-sm">{account.name}</CardTitle>
-                        <CardDescription className="text-xs">{account.owner_type}</CardDescription>
+                        <CardTitle className="text-sm">{row.name}</CardTitle>
+                        <CardDescription className="text-xs">{row.created_at}</CardDescription>
                       </div>
-                      <Badge className={`text-xs ${getStatusColor(account.is_active)}`}>{account.is_active}</Badge>
+                      <Badge className={`text-xs ${getStatusColor(row.is_active)}`}>{row.is_active}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="pb-2">
                     <div className="space-y-1 text-xs">
                       <div className="flex items-center">
                         <MailIcon className="h-3 w-3 mr-1 text-muted-foreground" />
-                        <span>{account.email}</span>
+                        <span>{row.email}</span>
                       </div>
-                      {account.phone && (
+                      {row.phone && (
                         <div className="flex items-center">
                           <PhoneIcon className="h-3 w-3 mr-1 text-muted-foreground" />
-                          <span>{account.phone}</span>
+                          <span>{row.phone}</span>
                         </div>
                       )}
                       <div className="flex items-center">
                         <UserIcon className="h-3 w-3 mr-1 text-muted-foreground" />
-                        <span>{account.assets_count}/{account.assets_count} devices</span>
+                        <span>{row.address}</span>
                       </div>
                       <div className="flex items-center">
                         <CalendarIcon className="h-3 w-3 mr-1 text-muted-foreground" />
-                        <span>Joined {new Date(account.created_at).toLocaleDateString()}</span>
+                        <span>Joined {new Date(row.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between pt-2 border-t text-xs">
-                    <Button variant="outline" size="sm" onClick={() => handleViewAccount(account)} className="h-7 text-xs">
+                    <Button variant="outline" size="sm" onClick={() => handleViewRow(row)} className="h-7 text-xs">
                       View
                     </Button>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditAccount(account)} className="h-7 w-7">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditRow(row)} className="h-7 w-7">
                         <EditIcon className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteAccount(account.id)} className="h-7 w-7">
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(row.id)} className="h-7 w-7">
                         <TrashIcon className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleShareAccount(account)} className="h-7 w-7">
+                      <Button variant="ghost" size="icon" onClick={() => handleShareRow(row)} className="h-7 w-7">
                         <ShareIcon className="h-3 w-3" />
                       </Button>
                     </div>
@@ -422,10 +396,10 @@ export function AccountsPage() {
           )}
 
           {/* Pagination Controls */}
-          {filteredAccounts.length > 0 && (
+          {filteredRows.length > 0 && (
             <div className="flex items-center justify-between mt-4 text-xs">
               <div className="text-muted-foreground">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredAccounts.length)} of {filteredAccounts.length} accounts
+                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredRows.length)} of {filteredRows.length} accounts
               </div>
               
               <div className="flex items-center gap-2">
@@ -511,13 +485,15 @@ export function AccountsPage() {
               </div>
 
               {isEditing ? (
-                <AccountEditForm 
-                  account={selectedAccount} 
-                  onSave={handleSaveAccount} 
-                  onCancel={() => setIsEditing(false)}
-                />
+                  <div></div>
+                // <AccountEditForm
+                //   account={selectedAccount}
+                //   onSave={handleSaveAccount}
+                //   onCancel={() => setIsEditing(false)}
+                // />
               ) : (
-                <AccountDetailView account={selectedAccount} onEdit={() => setIsEditing(true)} />
+                  <div></div>
+                  // <AccountDetailView account={selectedAccount} onEdit={() => setIsEditing(true)} />
               )}
             </div>
           </div>
@@ -527,166 +503,166 @@ export function AccountsPage() {
   )
 }
 
-function AccountDetailView({ account, onEdit }: { account: Account; onEdit: () => void }) {
-  return (
-    <div className="space-y-4 text-sm">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-bold">{account.name}</h3>
-          <p className="text-muted-foreground text-xs">{account.owner_type}</p>
-        </div>
-        <Badge className={`text-xs ${getStatusColor((account.is_active) ? 'true' : 'false')}`}>{account.is_active}</Badge>
-      </div>
+// function AccountDetailView({ account, onEdit }: { account: Account; onEdit: () => void }) {
+//       return (
+//         <div className="space-y-4 text-sm">
+//           <div className="flex justify-between items-center">
+//             <div>
+//               <h3 className="text-lg font-bold">{account.name}</h3>
+//               <p className="text-muted-foreground text-xs">{account.owner_type}</p>
+//             </div>
+//             <Badge className={`text-xs ${getStatusColor((account.is_active) ? 'true' : 'false')}`}>{account.is_active}</Badge>
+//           </div>
+//
+//           <Tabs defaultValue="details">
+//             <TabsList className="grid w-full grid-cols-2 text-xs h-8">
+//               <TabsTrigger value="details" className="text-xs">Details</TabsTrigger>
+//               <TabsTrigger value="billing" className="text-xs">Billing</TabsTrigger>
+//             </TabsList>
+//
+//             <TabsContent value="details" className="space-y-3 pt-3">
+//               <div className="space-y-3">
+//                 <div>
+//                   <Label className="text-muted-foreground text-xs">Email</Label>
+//                   <p className="font-medium text-sm">{account.email}</p>
+//                 </div>
+//                 {account.phone && (
+//                   <div>
+//                     <Label className="text-muted-foreground text-xs">Phone</Label>
+//                     <p className="font-medium text-sm">{account.phone}</p>
+//                   </div>
+//                 )}
+//
+//                 <Separator />
+//                 <div className="grid grid-cols-2 gap-3">
+//                   <div>
+//                     <Label className="text-muted-foreground text-xs">Devices</Label>
+//                     <p className="font-medium text-sm">{account.assets_count}/{account.assets_count}</p>
+//                   </div>
+//
+//                 </div>
+//                 <Separator />
+//                 <div className="grid grid-cols-2 gap-3">
+//                   <div>
+//                     <Label className="text-muted-foreground text-xs">Created</Label>
+//                     <p className="font-medium text-sm">{new Date(account.created_at).toLocaleDateString()}</p>
+//                   </div>
+//
+//                 </div>
+//               </div>
+//             </TabsContent>
+//               {/*
+//             <TabsContent value="billing" className="pt-3">
+//               <div className="space-y-3">
+//                 <div className="p-3 border rounded-lg text-xs">
+//                   <h4 className="font-medium mb-1">Current Plan</h4>
+//                   <div className="flex justify-between items-center">
+//                     <span className="capitalize">{account.subscription} Plan</span>
+//                     <Badge className={getSubscriptionColor(account.subscription)}>
+//                       {account.subscription}
+//                     </Badge>
+//                   </div>
+//                 </div>
+//                 <div className="p-3 border rounded-lg text-xs">
+//                   <h4 className="font-medium mb-1">Billing Information</h4>
+//                   <p className="text-sm text-muted-foreground">Next billing date: {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString()}</p>
+//                 </div>
+//               </div>
+//             </TabsContent>
+//                */}
+//           </Tabs>
+//           <div className="flex gap-2 pt-4 text-xs">
+//             <Button onClick={onEdit} className="flex-1 h-8 text-xs">
+//               <EditIcon className="h-3 w-3 mr-1" />
+//               Edit Account
+//             </Button>
+//             <Button variant="outline" className="flex-1 h-8 text-xs">
+//               <ShareIcon className="h-3 w-3 mr-1" />
+//               Share
+//             </Button>
+//           </div>
+//         </div>
+//       )
+// }
+//
+// function AccountEditForm({ account, onSave, onCancel }: {
+//   account: Account;
+//   onSave: (account: Account) => void;
+//   onCancel: () => void;
+// }) {
+//     const [formData, setFormData] = useState(account)
 
-      <Tabs defaultValue="details">
-        <TabsList className="grid w-full grid-cols-2 text-xs h-8">
-          <TabsTrigger value="details" className="text-xs">Details</TabsTrigger>
-          <TabsTrigger value="billing" className="text-xs">Billing</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details" className="space-y-3 pt-3">
-          <div className="space-y-3">
-            <div>
-              <Label className="text-muted-foreground text-xs">Email</Label>
-              <p className="font-medium text-sm">{account.email}</p>
-            </div>
-            {account.phone && (
-              <div>
-                <Label className="text-muted-foreground text-xs">Phone</Label>
-                <p className="font-medium text-sm">{account.phone}</p>
-              </div>
-            )}
-
-            <Separator />
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-muted-foreground text-xs">Devices</Label>
-                <p className="font-medium text-sm">{account.assets_count}/{account.assets_count}</p>
-              </div>
-
-            </div>
-            <Separator />
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-muted-foreground text-xs">Created</Label>
-                <p className="font-medium text-sm">{new Date(account.created_at).toLocaleDateString()}</p>
-              </div>
-
-            </div>
-          </div>
-        </TabsContent>
-          {/*
-        <TabsContent value="billing" className="pt-3">
-          <div className="space-y-3">
-            <div className="p-3 border rounded-lg text-xs">
-              <h4 className="font-medium mb-1">Current Plan</h4>
-              <div className="flex justify-between items-center">
-                <span className="capitalize">{account.subscription} Plan</span>
-                <Badge className={getSubscriptionColor(account.subscription)}>
-                  {account.subscription}
-                </Badge>
-              </div>
-            </div>
-            <div className="p-3 border rounded-lg text-xs">
-              <h4 className="font-medium mb-1">Billing Information</h4>
-              <p className="text-sm text-muted-foreground">Next billing date: {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString()}</p>
-            </div>
-          </div>
-        </TabsContent>
-           */}
-      </Tabs>
-      <div className="flex gap-2 pt-4 text-xs">
-        <Button onClick={onEdit} className="flex-1 h-8 text-xs">
-          <EditIcon className="h-3 w-3 mr-1" />
-          Edit Account
-        </Button>
-        <Button variant="outline" className="flex-1 h-8 text-xs">
-          <ShareIcon className="h-3 w-3 mr-1" />
-          Share
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function AccountEditForm({ account, onSave, onCancel }: { 
-  account: Account; 
-  onSave: (account: Account) => void;
-  onCancel: () => void;
-}) {
-  const [formData, setFormData] = useState(account)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSave(formData)
-  }
-
-  const handleChange = (field: keyof Account, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-3 text-sm">
-      <div className="space-y-1">
-        <Label htmlFor="name" className="text-xs">Account Name</Label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={(e) => handleChange('name', e.target.value)}
-          required
-          className="text-xs h-8"
-        />
-      </div>
-
-      <div className="space-y-1">
-        <Label htmlFor="email" className="text-xs">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleChange('email', e.target.value)}
-          required
-          className="text-xs h-8"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="phone" className="text-xs">Phone</Label>
-          <Input
-            id="phone"
-            value={formData.phone || ''}
-            onChange={(e) => handleChange('phone', e.target.value)}
-            className="text-xs h-8"
-          />
-        </div>
-
-      </div>
-
-      <div className="space-y-1">
-        <Label htmlFor="status" className="text-xs">Status</Label>
-        <select
-            id="status"
-            value={(formData.is_active) ? 'true' : 'false'}
-            onChange={(e) => handleChange('is_active', e.target.value)}
-            className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background file:border-0 file:bg-transparent file:text-xs file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </select>
-      </div>
-
-      <div className="flex gap-2 pt-3 text-xs">
-        <Button type="submit" className="flex-1 h-8 text-xs">
-          Save Changes
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-8 text-xs">
-          Cancel
-        </Button>
-      </div>
-    </form>
-  )
-}
+//   const handleSubmit = (e: React.FormEvent) => {
+//     e.preventDefault()
+//     onSave(formData)
+//   }
+//
+//   const handleChange = (field: keyof Account, value) => {
+//     setFormData(prev => ({ ...prev, [field]: value }))
+//   }
+//
+//   return (
+//     <form onSubmit={handleSubmit} className="space-y-3 text-sm">
+//       <div className="space-y-1">
+//         <Label htmlFor="name" className="text-xs">Account Name</Label>
+//         <Input
+//           id="name"
+//           value={formData.name}
+//           onChange={(e) => handleChange('name', e.target.value)}
+//           required
+//           className="text-xs h-8"
+//         />
+//       </div>
+//
+//       <div className="space-y-1">
+//         <Label htmlFor="email" className="text-xs">Email</Label>
+//         <Input
+//           id="email"
+//           type="email"
+//           value={formData.email}
+//           onChange={(e) => handleChange('email', e.target.value)}
+//           required
+//           className="text-xs h-8"
+//         />
+//       </div>
+//
+//       <div className="grid grid-cols-2 gap-3">
+//         <div className="space-y-1">
+//           <Label htmlFor="phone" className="text-xs">Phone</Label>
+//           <Input
+//             id="phone"
+//             value={formData.phone || ''}
+//             onChange={(e) => handleChange('phone', e.target.value)}
+//             className="text-xs h-8"
+//           />
+//         </div>
+//
+//       </div>
+//
+//       <div className="space-y-1">
+//         <Label htmlFor="status" className="text-xs">Status</Label>
+//         <select
+//             id="status"
+//             value={(formData.is_active) ? 'true' : 'false'}
+//             onChange={(e) => handleChange('is_active', e.target.value)}
+//             className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background file:border-0 file:bg-transparent file:text-xs file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+//           >
+//             <option value="true">Active</option>
+//             <option value="false">Inactive</option>
+//           </select>
+//       </div>
+//
+//       <div className="flex gap-2 pt-3 text-xs">
+//         <Button type="submit" className="flex-1 h-8 text-xs">
+//           Save Changes
+//         </Button>
+//         <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-8 text-xs">
+//           Cancel
+//         </Button>
+//       </div>
+//     </form>
+//   )
+// }
 
 // Helper function to get status color classes
 function getStatusColor(status: string) {
