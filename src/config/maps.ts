@@ -1,10 +1,17 @@
 // Google Maps configuration
 export const GOOGLE_MAPS_API_KEY = 'AIzaSyAvivakNMpWsx5OSgRyNylfUk_ZPL-Dfhc';
-
+export const GOOGLE_MAP_ZOOM = 12;
 export const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry" | "drawing" | "visualization")[] = [
   "places",
   "geometry"
 ];
+export const GOOGLE_MAPS_LANGUAGE = 'en';
+export const GOOGLE_MAPS_REGION = 'KE';
+
+// mapbox configuration
+export const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZGlja3Nvbi1nZW9zYXQiLCJhIjoiY21qYWJxejd1MDAyZTNrcGM3MzR0ZWV2dyJ9.0gMv173GqhawZodyu2m0zw';
+export const MAPBOX_STYLE_URL = 'mapbox://styles/dickson-geos/ck92022200001ilj10000001';
+export const MAPBOX_ZOOM = 12;
 
 // Nairobi coordinates for default center
 export const NAIROBI_CENTER = {

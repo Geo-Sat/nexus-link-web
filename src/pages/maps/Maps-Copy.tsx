@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleTrackingMap } from '@/components/GoogleTrackingMap';
-import { VehicleSearchOverlay } from '@/components/VehicleSearchOverlay';
-import { SelectedVehiclesTable } from '@/components/SelectedVehiclesTable';
-import { Vehicle } from '@/types/vehicle';
-import { fetchVehicles, simulateVehicleMovement } from '@/data/mockVehicles';
-import { fetchAccounts } from '@/data/mockAccount';
-import { useToast } from '@/hooks/use-toast';
+import { GoogleTrackingMap } from '@/components/GoogleTrackingMap.tsx';
+import { VehicleSearchOverlay } from '@/components/AssetSearchOverlay.tsx';
+import { SelectedVehiclesTable } from '@/components/SelectedVehiclesTable.tsx';
+import { Vehicle } from '@/types/vehicle.ts';
+import { fetchVehicles, simulateVehicleMovement } from '@/data/mockVehicles.ts';
+import { fetchAccounts } from '@/data/mockAccount.ts';
+import { useToast } from '@/hooks/use-toast.ts';
 import '@/styles/overlays.css';
 import { X, ChevronDown, Search, Check, ChevronUp, Car } from 'lucide-react';
-import { Account } from '@/types/account';
+import { Account } from '@/types/account.ts';
 import { useNavigate } from 'react-router-dom';
-import { LiveTrackingData } from '@/types/live-tracking';
+import { LiveTrackingData } from '@/types/live-tracking.ts';
+import {LoadingView} from "@/components/shared/LoadingView.tsx";
 
 export function MapsPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -32,8 +33,8 @@ export function MapsPage() {
 
   // Get WebSocket URL based on environment
   const getWebSocketUrl = () => {
-    let wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    let imeiParam = '0358657105381656'; 
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const imeiParam = '0358657105381656';
     let hostParam = window.location.host;
     hostParam = '65.109.170.207:8000';
     // For development - use localhost or your server URL
@@ -142,7 +143,7 @@ export function MapsPage() {
   };
 
   const handleVehicleUpdate = (data: LiveTrackingData) => {
-    var updatedVehicle: Partial<Vehicle> = {
+    const updatedVehicle: Partial<Vehicle> = {
       imei: data.imei,
       coordinates: [data.longitude, data.latitude],
       speed: data.speed,
@@ -214,10 +215,12 @@ export function MapsPage() {
         vehicleIds: selectedVehicles
       });
     }
+
   }, [selectedVehicles, connectionStatus]);
 
   // Load initial vehicle and driver data
   useEffect(() => {
+      
     const loadData = async () => {
       try {
         const [vehicleData, driverData] = await Promise.all([
@@ -339,27 +342,8 @@ export function MapsPage() {
   );
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="glass-panel p-8 text-center">
-          <div className="animate-pulse-slow mb-4">
-            <div className="w-16 h-16 mx-auto bg-primary/20 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 2L3 7v11h4v-6h6v6h4V7l-7-5z" />
-              </svg>
-            </div>
-          </div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">
-            Loading...
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Initializing and loading map...
-          </p>
-        </div>
-      </div>
-    );
+    return (<LoadingView headline={`Loading`} subline={`Initializing map...`}/>);
   }
-
   return (
     <div className="relative flex-1 bg-background h-[calc(100vh-5rem)]">
       {/* Map container */}

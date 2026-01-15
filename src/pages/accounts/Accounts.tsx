@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import {useState, useMemo, useEffect} from 'react'
 import {
   Table,
   TableBody,
@@ -6,11 +6,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+} from '@/components/ui/table.tsx'
+import { Button } from '@/components/ui/button.tsx'
+import { Input } from '@/components/ui/input.tsx'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.tsx'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog.tsx'
 import { 
   PlusIcon, 
   EditIcon, 
@@ -32,107 +32,73 @@ import {
   ChevronsRightIcon,
   ArrowUpDownIcon
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
-interface Account {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  company?: string
-  devices: number
-  maxDevices: number
-  status: 'active' | 'inactive' | 'suspended'
-  subscription: 'basic' | 'pro' | 'enterprise'
-  createdAt: string
-  lastLogin?: string
-  address?: string
-}
-
-const mockAccounts: Account[] = [
-  {
-    id: '1',
-    name: 'ABC Transport',
-    email: 'info@abctransport.com',
-    phone: '+254712345678',
-    company: 'ABC Transport Ltd',
-    devices: 5,
-    maxDevices: 10,
-    status: 'active',
-    subscription: 'pro',
-    createdAt: '2025-09-01T10:00:00Z',
-    lastLogin: '2025-09-04T08:30:00Z',
-    address: 'Nairobi, Kenya'
-  },
-  {
-    id: '2',
-    name: 'XYZ Logistics',
-    email: 'admin@xyzlogistics.com',
-    phone: '+254723456789',
-    company: 'XYZ Logistics Inc',
-    devices: 12,
-    maxDevices: 15,
-    status: 'active',
-    subscription: 'enterprise',
-    createdAt: '2025-08-15T14:20:00Z',
-    lastLogin: '2025-09-04T09:15:00Z',
-    address: 'Mombasa, Kenya'
-  },
-  {
-    id: '3',
-    name: 'Quick Deliveries',
-    email: 'support@quickdeliveries.com',
-    devices: 3,
-    maxDevices: 5,
-    status: 'inactive',
-    subscription: 'basic',
-    createdAt: '2025-09-03T16:45:00Z'
-  },
-  // Add more mock data for pagination testing
-  ...Array.from({ length: 27 }, (_, i) => ({
-    id: `${i + 4}`,
-    name: `Company ${i + 1}`,
-    email: `contact@company${i + 1}.com`,
-    phone: i % 3 === 0 ? undefined : `+2547${34567890 + i}`,
-    company: i % 4 === 0 ? undefined : `Company ${i + 1} Ltd`,
-    devices: (i % 10) + 1,
-    maxDevices: (i % 10) + 5,
-    status: ['active', 'inactive', 'suspended'][i % 3] as 'active' | 'inactive' | 'suspended',
-    subscription: ['basic', 'pro', 'enterprise'][i % 3] as 'basic' | 'pro' | 'enterprise',
-    createdAt: new Date(Date.now() - (i * 86400000 * 30)).toISOString(),
-    lastLogin: i % 5 === 0 ? undefined : new Date(Date.now() - (i * 3600000)).toISOString(),
-    address: i % 6 === 0 ? undefined : `Address ${i + 1}, City ${i + 1}`
-  }))
-]
+import { Badge } from '@/components/ui/badge.tsx'
+import { Separator } from '@/components/ui/separator.tsx'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx'
+import { Label } from '@/components/ui/label.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.tsx'
+import { useToast } from '@/hooks/use-toast.ts';
+import {LoadingView} from "@/components/shared/LoadingView.tsx";
+import axios from 'axios';
+import { Account } from '@/types/account.ts';
+import apiClient from '@/lib/api'
 
 export function AccountsPage() {
-  const [accounts, setAccounts] = useState<Account[]>(mockAccounts)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
-  const [isSidePanelOpen, setIsSidePanelOpen] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [sortField, setSortField] = useState<keyof Account>('createdAt')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+    const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
+    const [accounts, setAccounts] = useState<Account[]>([])
+    const [searchTerm, setSearchTerm] = useState('')
+    const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
+    const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
+    const [isSidePanelOpen, setIsSidePanelOpen] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
+    const [sortField, setSortField] = useState<keyof Account>('created_at')
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+    // Load initial data
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+
+                const response = await apiClient.get('accounts/accounts');
+
+                // Extract the accounts data from the results array
+                const accountsData = response.data.results;
+
+                // Process your data here - set accounts data to state
+                setAccounts(accountsData);
+
+                toast({
+                    title: "Data Loaded",
+                    description: `Loaded ${accountsData.length} accounts`,
+                });
+                setLoading(false);
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                toast({
+                    title: "Error",
+                    description: "Failed to load data",
+                    variant: "destructive",
+                });
+                setLoading(false);
+            }
+        };
+
+        loadData();
+    }, [toast]);
 
   const filteredAccounts = useMemo(() => {
-    let result = accounts.filter(
+    const result = accounts.filter(
       (account) =>
         account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (account.company && account.company.toLowerCase().includes(searchTerm.toLowerCase()))
+        account.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     // Sorting
     result.sort((a, b) => {
-      let aValue = a[sortField]
-      let bValue = b[sortField]
+        const aValue = a[sortField]
+        const bValue = b[sortField]
       
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         return sortDirection === 'asc' 
@@ -186,7 +152,7 @@ export function AccountsPage() {
     setIsEditing(true)
   }
 
-  const handleDeleteAccount = (id: string) => {
+  const handleDeleteAccount = (id: number) => {
     if (window.confirm('Are you sure you want to delete this account?')) {
       setAccounts(accounts.filter(account => account.id !== id))
       if (selectedAccount?.id === id) {
@@ -219,19 +185,19 @@ export function AccountsPage() {
   }
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Company', 'Phone', 'Devices', 'Max Devices', 'Status', 'Subscription', 'Created At', 'Last Login', 'Address']
+    const headers = ['Name', 'Email', 'Owner', 'Phone', 'Devices', 'Max Devices', 'Status', 'Subscription', 'Created At', 'Last Login', 'Address']
     const csvData = filteredAccounts.map(account => [
       account.name,
       account.email,
-      account.company || 'N/A',
-      account.phone || 'N/A',
-      account.devices.toString(),
-      account.maxDevices.toString(),
-      account.status,
-      account.subscription,
-      new Date(account.createdAt).toLocaleDateString(),
-      account.lastLogin ? new Date(account.lastLogin).toLocaleDateString() : 'N/A',
-      account.address || 'N/A'
+      // account.owner_type,
+      // account.phone || 'N/A',
+      // account.devices.toString(),
+      // account.maxDevices.toString(),
+      // account.status,
+      // account.subscription,
+      // new Date(account.createdAt).toLocaleDateString(),
+      // account.lastLogin ? new Date(account.lastLogin).toLocaleDateString() : 'N/A',
+      // account.address || 'N/A'
     ])
 
     const csvContent = [
@@ -252,24 +218,15 @@ export function AccountsPage() {
     document.body.removeChild(link)
   }
 
-  const getStatusColor = (status: Account['status']) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800'
-      case 'inactive': return 'bg-gray-100 text-gray-800'
-      case 'suspended': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+  const getStatusColor = (is_active: boolean) => {
+      return (is_active) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
   }
 
-  const getSubscriptionColor = (subscription: Account['subscription']) => {
-    switch (subscription) {
-      case 'basic': return 'bg-blue-100 text-blue-800'
-      case 'pro': return 'bg-purple-100 text-purple-800'
-      case 'enterprise': return 'bg-orange-100 text-orange-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
 
+
+  if (loading) {
+      return (<LoadingView headline={`Accounts`} subline={`Loading, please wait...`} />)
+  }
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6 flex items-center justify-between">
@@ -334,7 +291,7 @@ export function AccountsPage() {
                     <TableRow>
                       <TableHead className="py-2 text-xs cursor-pointer hover:bg-accent">
                         <Button variant="ghost" onClick={() => handleSort('name')} className="p-0 font-medium">
-                          Account Name
+                            Name
                           <ArrowUpDownIcon className="ml-1 h-3 w-3" />
                         </Button>
                       </TableHead>
@@ -345,31 +302,25 @@ export function AccountsPage() {
                         </Button>
                       </TableHead>
                       <TableHead className="py-2 text-xs cursor-pointer hover:bg-accent">
-                        <Button variant="ghost" onClick={() => handleSort('company')} className="p-0 font-medium">
-                          Company
-                          <ArrowUpDownIcon className="ml-1 h-3 w-3" />
+                        <Button variant="ghost" className="p-0 font-medium">
+                          Phone
                         </Button>
                       </TableHead>
                       <TableHead className="py-2 text-xs cursor-pointer hover:bg-accent">
-                        <Button variant="ghost" onClick={() => handleSort('devices')} className="p-0 font-medium">
-                          Devices
+                        <Button variant="ghost" onClick={() => handleSort('assets_count')} className="p-0 font-medium">
+                          No of assets
                           <ArrowUpDownIcon className="ml-1 h-3 w-3" />
                         </Button>
                       </TableHead>
+
                       <TableHead className="py-2 text-xs cursor-pointer hover:bg-accent">
-                        <Button variant="ghost" onClick={() => handleSort('subscription')} className="p-0 font-medium">
-                          Subscription
-                          <ArrowUpDownIcon className="ml-1 h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead className="py-2 text-xs cursor-pointer hover:bg-accent">
-                        <Button variant="ghost" onClick={() => handleSort('status')} className="p-0 font-medium">
+                        <Button variant="ghost" onClick={() => handleSort('is_active')} className="p-0 font-medium">
                           Status
                           <ArrowUpDownIcon className="ml-1 h-3 w-3" />
                         </Button>
                       </TableHead>
                       <TableHead className="py-2 text-xs cursor-pointer hover:bg-accent">
-                        <Button variant="ghost" onClick={() => handleSort('createdAt')} className="p-0 font-medium">
+                        <Button variant="ghost" onClick={() => handleSort('created_at')} className="p-0 font-medium">
                           Created
                           <ArrowUpDownIcon className="ml-1 h-3 w-3" />
                         </Button>
@@ -382,23 +333,16 @@ export function AccountsPage() {
                       <TableRow key={account.id} className="text-xs">
                         <TableCell className="font-medium py-2">{account.name}</TableCell>
                         <TableCell className="py-2">{account.email}</TableCell>
-                        <TableCell className="py-2">{account.company || 'N/A'}</TableCell>
-                        <TableCell className="py-2">{account.devices}/{account.maxDevices}</TableCell>
+                        <TableCell className="py-2">{account.phone || 'N/A'}</TableCell>
+                        <TableCell className="py-2">{account.assets_count}</TableCell>
                         <TableCell className="py-2">
                           <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${getSubscriptionColor(account.subscription)}`}
+                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${getStatusColor(account.is_active)}`}
                           >
-                            {account.subscription}
+                            {(account.is_active) ? 'Active': 'In-active'}
                           </span>
                         </TableCell>
-                        <TableCell className="py-2">
-                          <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${getStatusColor(account.status)}`}
-                          >
-                            {account.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-2">{new Date(account.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="py-2">{new Date(account.created_at).toLocaleDateString()}</TableCell>
                         <TableCell className="py-2">
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" onClick={() => handleViewAccount(account)} className="h-7 w-7">
@@ -429,9 +373,9 @@ export function AccountsPage() {
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-sm">{account.name}</CardTitle>
-                        <CardDescription className="text-xs">{account.company || 'Individual Account'}</CardDescription>
+                        <CardDescription className="text-xs">{account.owner_type}</CardDescription>
                       </div>
-                      <Badge className={`text-xs ${getStatusColor(account.status)}`}>{account.status}</Badge>
+                      <Badge className={`text-xs ${getStatusColor(account.is_active)}`}>{account.is_active}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="pb-2">
@@ -448,11 +392,11 @@ export function AccountsPage() {
                       )}
                       <div className="flex items-center">
                         <UserIcon className="h-3 w-3 mr-1 text-muted-foreground" />
-                        <span>{account.devices}/{account.maxDevices} devices</span>
+                        <span>{account.assets_count}/{account.assets_count} devices</span>
                       </div>
                       <div className="flex items-center">
                         <CalendarIcon className="h-3 w-3 mr-1 text-muted-foreground" />
-                        <span>Joined {new Date(account.createdAt).toLocaleDateString()}</span>
+                        <span>Joined {new Date(account.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -589,9 +533,9 @@ function AccountDetailView({ account, onEdit }: { account: Account; onEdit: () =
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-bold">{account.name}</h3>
-          <p className="text-muted-foreground text-xs">{account.company || 'Individual Account'}</p>
+          <p className="text-muted-foreground text-xs">{account.owner_type}</p>
         </div>
-        <Badge className={`text-xs ${getStatusColor(account.status)}`}>{account.status}</Badge>
+        <Badge className={`text-xs ${getStatusColor((account.is_active) ? 'true' : 'false')}`}>{account.is_active}</Badge>
       </div>
 
       <Tabs defaultValue="details">
@@ -612,39 +556,26 @@ function AccountDetailView({ account, onEdit }: { account: Account; onEdit: () =
                 <p className="font-medium text-sm">{account.phone}</p>
               </div>
             )}
-            {account.address && (
-              <div>
-                <Label className="text-muted-foreground text-xs">Address</Label>
-                <p className="font-medium text-sm">{account.address}</p>
-              </div>
-            )}
+
             <Separator />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-muted-foreground text-xs">Devices</Label>
-                <p className="font-medium text-sm">{account.devices}/{account.maxDevices}</p>
+                <p className="font-medium text-sm">{account.assets_count}/{account.assets_count}</p>
               </div>
-              <div>
-                <Label className="text-muted-foreground text-xs">Subscription</Label>
-                <p className="font-medium text-sm capitalize">{account.subscription}</p>
-              </div>
+
             </div>
             <Separator />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-muted-foreground text-xs">Created</Label>
-                <p className="font-medium text-sm">{new Date(account.createdAt).toLocaleDateString()}</p>
+                <p className="font-medium text-sm">{new Date(account.created_at).toLocaleDateString()}</p>
               </div>
-              {account.lastLogin && (
-                <div>
-                  <Label className="text-muted-foreground text-xs">Last Login</Label>
-                  <p className="font-medium text-sm">{new Date(account.lastLogin).toLocaleDateString()}</p>
-                </div>
-              )}
+
             </div>
           </div>
         </TabsContent>
-
+          {/*
         <TabsContent value="billing" className="pt-3">
           <div className="space-y-3">
             <div className="p-3 border rounded-lg text-xs">
@@ -662,8 +593,8 @@ function AccountDetailView({ account, onEdit }: { account: Account; onEdit: () =
             </div>
           </div>
         </TabsContent>
+           */}
       </Tabs>
-
       <div className="flex gap-2 pt-4 text-xs">
         <Button onClick={onEdit} className="flex-1 h-8 text-xs">
           <EditIcon className="h-3 w-3 mr-1" />
@@ -690,7 +621,7 @@ function AccountEditForm({ account, onSave, onCancel }: {
     onSave(formData)
   }
 
-  const handleChange = (field: keyof Account, value: any) => {
+  const handleChange = (field: keyof Account, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -729,65 +660,19 @@ function AccountEditForm({ account, onSave, onCancel }: {
             className="text-xs h-8"
           />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="company" className="text-xs">Company</Label>
-          <Input
-            id="company"
-            value={formData.company || ''}
-            onChange={(e) => handleChange('company', e.target.value)}
-            className="text-xs h-8"
-          />
-        </div>
-      </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="address" className="text-xs">Address</Label>
-        <Input
-          id="address"
-          value={formData.address || ''}
-          onChange={(e) => handleChange('address', e.target.value)}
-          className="text-xs h-8"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="maxDevices" className="text-xs">Max Devices</Label>
-          <Input
-            id="maxDevices"
-            type="number"
-            value={formData.maxDevices}
-            onChange={(e) => handleChange('maxDevices', parseInt(e.target.value))}
-            required
-            className="text-xs h-8"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="subscription" className="text-xs">Subscription</Label>
-          <select
-            id="subscription"
-            value={formData.subscription}
-            onChange={(e) => handleChange('subscription', e.target.value)}
-            className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background file:border-0 file:bg-transparent file:text-xs file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="basic">Basic</option>
-            <option value="pro">Pro</option>
-            <option value="enterprise">Enterprise</option>
-          </select>
-        </div>
       </div>
 
       <div className="space-y-1">
         <Label htmlFor="status" className="text-xs">Status</Label>
         <select
             id="status"
-            value={formData.status}
-            onChange={(e) => handleChange('status', e.target.value)}
+            value={(formData.is_active) ? 'true' : 'false'}
+            onChange={(e) => handleChange('is_active', e.target.value)}
             className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background file:border-0 file:bg-transparent file:text-xs file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="suspended">Suspended</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
           </select>
       </div>
 
@@ -806,18 +691,8 @@ function AccountEditForm({ account, onSave, onCancel }: {
 // Helper function to get status color classes
 function getStatusColor(status: string) {
   switch (status) {
-    case 'active': return 'bg-green-100 text-green-800'
-    case 'inactive': return 'bg-gray-100 text-gray-800'
-    case 'suspended': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
-
-function getSubscriptionColor(subscription: string) {
-  switch (subscription) {
-    case 'basic': return 'bg-blue-100 text-blue-800'
-    case 'pro': return 'bg-purple-100 text-purple-800'
-    case 'enterprise': return 'bg-orange-100 text-orange-800'
+    case 'true': return 'bg-green-100 text-green-800'
+    case 'false': return 'bg-gray-100 text-gray-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }

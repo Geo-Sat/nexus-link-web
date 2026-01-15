@@ -3,20 +3,20 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useLayoutConfig } from '@/stores/layout';
 import {
-  Map,
-  LayoutDashboard,
-  Settings,
-  ChevronRight,
-  ChevronLeft,
-  Users,
-  Car,
-  Bell,
-  FileText,
-  Folder,
-  List,
-  Globe,
-  File,
-  Group
+    Map,
+    LayoutDashboard,
+    Settings,
+    ChevronRight,
+    ChevronLeft,
+    Users,
+    Car,
+    Bell,
+    FileText,
+    Folder,
+    List,
+    Globe,
+    File,
+    Group, Handshake, GlassesIcon, ListIcon
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
@@ -52,17 +52,18 @@ const NavItem = ({ icon, title, to, isCollapsed }: NavItemProps) => {
 };
 
 const iconMapping: { [key: string]: React.ReactNode } = {
-  '/dashboard': <LayoutDashboard size={20} />,
-  '/maps': <Map size={20} />,
-  '/tracking': <Car size={20} />,
-  '/accounts': <Group size={20} />,
-  '/assets': <Folder size={20} />,
-  '/trips': <List size={20} />,
-  '/zones': <Globe size={20} />,
-  '/alerts': <Bell size={20} />,
-  '/reports': <File size={20} />,
-  '/settings': <Settings size={20} />,
-  '/profile': <Users size={20} />,
+    '/dashboard': <LayoutDashboard size={20} />,
+    '/maps': <Map size={20} />,
+    '/partners': <Handshake size={20} />,
+    '/tracking': <Car size={20} />,
+    '/accounts': <Group size={20} />,
+    '/assets': <ListIcon size={20} />,
+    '/trips': <List size={20} />,
+    '/zones': <Globe size={20} />,
+    '/alerts': <Bell size={20} />,
+    '/reports': <File size={20} />,
+    '/settings': <Settings size={20} />,
+    '/profile': <Users size={20} />,
 };
 
 export const Sidebar = () => {
